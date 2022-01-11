@@ -1,4 +1,4 @@
-import ModelType from '../interfaces/Model';
+import {ModelType} from '../interfaces/Model';
 
 const setModel = (model: ModelType) => {
     return {
