@@ -1,0 +1,12 @@
+appId: com.albertnlouis.skripsi.demo
+productName: Frontend Demo Client for Skripsi
+copyright: Copyright © 2021
+directories:
+  output: dist
+  buildResources: resources
+files:
+  - from: .
+    filter:
+      - package.json
+      - app
+publish: null

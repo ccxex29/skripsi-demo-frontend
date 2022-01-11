@@ -1,0 +1,46 @@
+.wrapper
+    position: absolute
+    bottom: 20px
+    left: 20px
+
+.popup
+    height: 200px
+    width: 200px
+    bottom: 50px
+    left: 20px
+    position: absolute
+    background-color: var(--skripsi-proto-bg-modal)
+    color: var(--skripsi-proto-fg-modal)
+    border-radius: 5px
+    padding: 20px
+    transition: transform .5s, opacity .2s .1s
+    z-index: 1
+    .popupTitle
+        font-size: 20px
+    .popupList
+        display: grid
+        grid-auto-rows: 30px
+        grid-template-columns: repeat(2, 1fr)
+        gap: 5px
+        align-items: center
+        .alignListValue
+            text-align: right
+            justify-content: right
+            width: 100%
+            input[type="text"]
+                display: block
+                width: calc(100% - 10px) // Text Input for some reasons does not compute parent padding
+.popupHidden
+    opacity: 0
+    transform: translateY(310px)
+    transition: transform .5s ease-out, opacity .3s ease-in
+
+.switchBtn
+    z-index: 5
+    padding: 8px 8px 5px 8px
+    border-radius: 50%
+    background-color: var(--skripsi-proto-bg-dark-btn)
+    color: var(--skripsi-proto-fg-dark-btn)
+    cursor: pointer
+    &:hover
+        background-color: var(--skripsi-proto-bg-dark-hovered-btn)
