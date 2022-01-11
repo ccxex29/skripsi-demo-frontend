@@ -108,7 +108,6 @@ const CameraFeedPlayer = (props: CameraFeedPlayerProps) => {
 
         new Promise<void>(async (resolve) => {
             while (true) {
-                console.log('loop ref')
                 if (isStreamInactive()) {
                     resolve();
                     return;
@@ -121,12 +120,11 @@ const CameraFeedPlayer = (props: CameraFeedPlayerProps) => {
         })
 
         while (true) {
-            console.log('loop req')
             if (isStreamInactive()) {
                 return;
             }
             if (isWaitingServerResponse) {
-                console.log('waiting for server')
+                console.warn('Waiting for server to keep up. Is the server lagging?');
                 await pauseTime(() => {
                 }, minRoundaboutDelaySecs * 1000);
                 continue;
