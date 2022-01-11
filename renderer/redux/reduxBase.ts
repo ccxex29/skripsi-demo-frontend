@@ -54,7 +54,6 @@ const initialState: StateDataType = {
 };
 
 const reducer = (state: any = initialState, action: ReducerActions) => {
-    console.log(action)
     switch (action.type) {
         case 'SET_MODEL_A':
             return {
