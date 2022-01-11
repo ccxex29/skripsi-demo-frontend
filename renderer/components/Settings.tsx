@@ -24,14 +24,13 @@ const Settings = () => {
         let jsxList: JSX.Element[] = [];
         for (let item of settingsList) {
             jsxList.push(
-                <React.Fragment key={item.name}>
+                <>
                     <span>{item.name}
                     </span>
                     <div className={styles.alignListValue}>
                         <input type={item.type} />
                     </div>
-                </React.Fragment>
-            );
+                </>);
         }
         return jsxList;
     }
