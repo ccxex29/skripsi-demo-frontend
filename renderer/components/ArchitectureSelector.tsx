@@ -1,11 +1,9 @@
 import React, {useState} from 'react';
 import AsyncSelect from 'react-select/async';
 import styles from '../public/styles/ArchitectureSelector.module.sass';
-import {ModelType} from '../interfaces/Model';
+import ModelType from '../interfaces/Model';
 import {setModel} from '../redux/model';
 import {connect} from 'react-redux';
-import {FaceDetectionPosition} from '../interfaces/FaceDetectionPosition';
-import {setFaceDetectionPosition} from '../redux/faceDetectionPosition';
 
 interface PropsType {
     alignment: string;
@@ -23,7 +21,7 @@ const mapDispatchToProps = (dispatch) => {
     return {
         setModel: (model: ModelType) => dispatch(setModel(model)),
     }
-};
+}
 
 const getFlexAlignment = (alignment: string) => {
     if (alignment === 'left') {
@@ -55,11 +53,11 @@ const getArchitectureList = () => {
 const ArchitectureSelector = (props: PropsType) => {
     const handleChangeSelect = (value: ArchitectureOption) => {
         const archType = props.isArchitectureA ? 'a' : 'b';
-        props.setModel({
+        setModel({
             value: value.value,
             target: archType
-        });
-    };
+        })
+    }
 
     return (
         <div id={`sel-arch-${props.alignment}`} className={styles.wrapper} style={{
@@ -85,4 +83,4 @@ const ArchitectureSelector = (props: PropsType) => {
     );
 };
 
-export default connect(null, mapDispatchToProps)(ArchitectureSelector);
+export default connect(mapDispatchToProps)(ArchitectureSelector);
