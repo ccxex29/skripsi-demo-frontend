@@ -40,9 +40,9 @@ interface FaceDetectionSquareProps {
 }
 
 const MESSAGE_REFRESH_TIMINGS = {
-    minRoundaboutDelaySecs: .5,
-    maxRefreshTimes: 5,
-    restoreRefreshIterationSecs: 3,
+    minRoundaboutDelaySecs: 1 / 15,
+    maxRefreshTimes: 15,
+    restoreRefreshIterationSecs: 1,
 }
 
 const mapStateToProps = (state: { selectedModels: SelectedModels, position: PositionType, predictions: { 'prediction_a': Prediction, 'prediction_b': Prediction } }) => {
@@ -66,7 +66,7 @@ const CameraFeedPlayer = (props: CameraFeedPlayerProps) => {
     const isLiveStartedFirstRun = useRef(true);
     const stream = useRef<MediaStream | undefined>();
     const videoElement = useRef<HTMLVideoElement>();
-    const [isWaitingServerResponse, setIsWaitingServerResponse] = useState(false);
+    let isWaiting = false;
 
     const constraints = {
         audio: false,
@@ -91,7 +91,6 @@ const CameraFeedPlayer = (props: CameraFeedPlayerProps) => {
         } catch (e) {
             console.error('Stream is probably invalid. Maybe the stream was set/unset too quickly?');
         }
-        // videoElement.current.srcObject = undefined;
     }
 
     const isStreamInactive = () => {
@@ -139,17 +138,18 @@ const CameraFeedPlayer = (props: CameraFeedPlayerProps) => {
             if (isSocketOffline() || isStreamInactive()) {
                 return;
             }
-            if (!isSocketReady() || isWaitingServerResponse) {
+            if (!isSocketReady() || isWaiting) {
                 console.warn('Waiting for server to keep up. Is the server lagging?');
-                await pauseTime(() => {
-                }, MESSAGE_REFRESH_TIMINGS.minRoundaboutDelaySecs * 1000);
+                await pauseTime(() => {}, MESSAGE_REFRESH_TIMINGS.minRoundaboutDelaySecs * 1000);
                 continue;
             }
-            if (!refreshTimes) {
+            if (refreshTimes < 1) {
                 await pauseTime(() => {
                 }, lastRestoredRefreshTime + (MESSAGE_REFRESH_TIMINGS.restoreRefreshIterationSecs * 1000) - (new Date()).getTime());
             }
-            setIsWaitingServerResponse(true);
+            isWaiting = true;
+            // setIsWaitingServerResponse(true);
+            // console.log(isWaitingServerResponse);
             refreshTimes--;
             const base64Image = getNewImage().next().value;
             const wsPayload = JSON.stringify({
@@ -158,8 +158,7 @@ const CameraFeedPlayer = (props: CameraFeedPlayerProps) => {
                 image: base64Image.replace(/^.+,/, ''),
             });
             socket.current.send(wsPayload);
-            await pauseTime(() => {
-            }, MESSAGE_REFRESH_TIMINGS.minRoundaboutDelaySecs * 1000);
+            await pauseTime(() => {}, MESSAGE_REFRESH_TIMINGS.minRoundaboutDelaySecs * 1000);
         }
     }
 
@@ -217,7 +216,7 @@ const CameraFeedPlayer = (props: CameraFeedPlayerProps) => {
         socket.current.onmessage = (msgEvent) => {
             const serverMessage = JSON.parse(msgEvent.data);
             if (serverMessage.status === 'done') {
-                setIsWaitingServerResponse(false);
+                isWaiting = false;
             } else if (serverMessage.status === 'error') {
                 resetFacePositionData();
             } else if (serverMessage.status === 'success') {
@@ -245,7 +244,7 @@ const CameraFeedPlayer = (props: CameraFeedPlayerProps) => {
     }
 
     const closeSocket = () => {
-        setIsWaitingServerResponse(false);
+        isWaiting = false
         socket.current.close();
     }
 
