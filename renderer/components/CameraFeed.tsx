@@ -209,10 +209,10 @@ const CameraFeedPlayer = (props: CameraFeedPlayerProps) => {
 
     const openSocket = () => {
         socket.current = new WebSocket('ws://localhost:8889/ws');
-        socket.current.onopen = () => console.log('connected');
+        socket.current.onopen = () => console.info('socket connected');
         socket.current.onclose = () => {
             resetPredictionData();
-            console.log('disconnected');
+            console.info('socket disconnected');
         }
         socket.current.onmessage = (msgEvent) => {
             const serverMessage = JSON.parse(msgEvent.data);
