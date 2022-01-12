@@ -1,22 +1,16 @@
 import React, {useState} from 'react';
 import AsyncSelect from 'react-select/async';
 import styles from '../public/styles/ArchitectureSelector.module.sass';
-import {ModelType} from '../interfaces/Model';
+import {ArchitectureOption, ModelType, SelectedModelType} from '../interfaces/Model';
 import {setModel} from '../redux/model';
 import {connect} from 'react-redux';
-import {FaceDetectionPosition} from '../interfaces/FaceDetectionPosition';
-import {setFaceDetectionPosition} from '../redux/faceDetectionPosition';
 
 interface PropsType {
-    alignment: string;
-    isArchitectureA?: boolean;
-    isArchitectureB?: boolean;
+    readonly alignment: string;
+    readonly isArchitectureA?: boolean;
+    readonly isArchitectureB?: boolean;
+    readonly selectedModel?: SelectedModelType;
     setModel: (model: ModelType) => void;
-}
-
-interface ArchitectureOption {
-    readonly value: string;
-    readonly label: string;
 }
 
 const mapDispatchToProps = (dispatch) => {
@@ -56,7 +50,7 @@ const ArchitectureSelector = (props: PropsType) => {
     const handleChangeSelect = (value: ArchitectureOption) => {
         const archType = props.isArchitectureA ? 'a' : 'b';
         props.setModel({
-            value: value.value,
+            value: value,
             target: archType
         });
     };
@@ -73,7 +67,7 @@ const ArchitectureSelector = (props: PropsType) => {
                 cacheOptions
                 className={styles.select}
                 onChange={handleChangeSelect}
-                // value={selectValue}
+                value={props.selectedModel}
                 loadOptions={getArchitectureList}
                 getOptionValue={(option: ArchitectureOption) => option.value}
                 getOptionLabel={(option: ArchitectureOption) => option.label}
