@@ -36,10 +36,16 @@ interface CameraFeedPlayerProps {
 
 interface FaceDetectionSquareProps {
     readonly position: PositionType;
-    videoElement: MutableRefObject<HTMLVideoElement|undefined>;
+    videoElement: MutableRefObject<HTMLVideoElement | undefined>;
 }
 
-const mapStateToProps = (state: { selectedModels: SelectedModels, position: PositionType, predictions: {'prediction_a': Prediction, 'prediction_b': Prediction} }) => {
+const MESSAGE_REFRESH_TIMINGS = {
+    minRoundaboutDelaySecs: .5,
+    maxRefreshTimes: 5,
+    restoreRefreshIterationSecs: 3,
+}
+
+const mapStateToProps = (state: { selectedModels: SelectedModels, position: PositionType, predictions: { 'prediction_a': Prediction, 'prediction_b': Prediction } }) => {
     return {
         selectedModels: state.selectedModels,
         position: state['face_detection'].position,
@@ -73,11 +79,13 @@ const CameraFeedPlayer = (props: CameraFeedPlayerProps) => {
     const setVideoElementObject = async () => {
         try {
             if (isLiveStarted) {
+                openSocket();
                 stream.current = await navigator.mediaDevices.getUserMedia(constraints);
                 videoElement.current.srcObject = stream.current;
                 requestToServer();
                 return;
             }
+            closeSocket();
             stream.current.getTracks().forEach(track => track.stop());
             resetDetectionAndRecognitionData();
         } catch (e) {
@@ -91,12 +99,14 @@ const CameraFeedPlayer = (props: CameraFeedPlayerProps) => {
     }
 
     const requestToServer = async () => {
-        const minRoundaboutDelaySecs = .5;
-        const maxRefreshTimes = 5;
-        const restoreRefreshIterationSecs = 5;
         let lastRestoredRefreshTime = (new Date()).getTime()
-        let refreshTimes = maxRefreshTimes;
+        let refreshTimes = MESSAGE_REFRESH_TIMINGS.maxRefreshTimes;
 
+        /**
+         * Pause Function that returns a Promise of a function which has been wrapped inside setTimeout
+         * @param callback
+         * @param delay
+         */
         const pauseTime = (callback: () => void, delay: number) => {
             return new Promise<void>(resolve => {
                 setTimeout(() => {
@@ -106,44 +116,50 @@ const CameraFeedPlayer = (props: CameraFeedPlayerProps) => {
             });
         }
 
+        /**
+         * Refresh Limiter Count Restoration
+         */
         new Promise<void>(async (resolve) => {
             while (true) {
-                if (isStreamInactive()) {
+                if (isSocketOffline() || isStreamInactive()) {
                     resolve();
                     return;
                 }
                 await pauseTime(() => {
-                    refreshTimes = maxRefreshTimes;
+                    refreshTimes = MESSAGE_REFRESH_TIMINGS.maxRefreshTimes;
                     lastRestoredRefreshTime = (new Date()).getTime();
-                }, restoreRefreshIterationSecs * 1000);
+                }, MESSAGE_REFRESH_TIMINGS.restoreRefreshIterationSecs * 1000);
             }
         })
 
+        /**
+         * Fetch Loop Logic
+         */
         while (true) {
-            if (isStreamInactive()) {
+            if (isSocketOffline() || isStreamInactive()) {
                 return;
             }
-            if (isWaitingServerResponse) {
+            if (!isSocketReady() || isWaitingServerResponse) {
                 console.warn('Waiting for server to keep up. Is the server lagging?');
                 await pauseTime(() => {
-                }, minRoundaboutDelaySecs * 1000);
+                }, MESSAGE_REFRESH_TIMINGS.minRoundaboutDelaySecs * 1000);
                 continue;
             }
             if (!refreshTimes) {
                 await pauseTime(() => {
-                }, lastRestoredRefreshTime + (restoreRefreshIterationSecs * 1000) - (new Date()).getTime());
+                }, lastRestoredRefreshTime + (MESSAGE_REFRESH_TIMINGS.restoreRefreshIterationSecs * 1000) - (new Date()).getTime());
             }
             setIsWaitingServerResponse(true);
             refreshTimes--;
             const base64Image = getNewImage().next().value;
             const wsPayload = JSON.stringify({
-                architecture_a: props.selectedModels.model_a,
-                architecture_b: props.selectedModels.model_b,
+                architecture_a: props.selectedModels.model_a.value,
+                architecture_b: props.selectedModels.model_b.value,
                 image: base64Image.replace(/^.+,/, ''),
             });
             socket.current.send(wsPayload);
             await pauseTime(() => {
-            }, minRoundaboutDelaySecs * 1000);
+            }, MESSAGE_REFRESH_TIMINGS.minRoundaboutDelaySecs * 1000);
         }
     }
 
@@ -160,38 +176,38 @@ const CameraFeedPlayer = (props: CameraFeedPlayerProps) => {
         canvas.setAttribute('height', videoElement.current.videoHeight.toString());
         const canvasCtx = canvas.getContext('2d');
         canvasCtx.drawImage(videoElement.current, 0, 0, videoElement.current.videoWidth, videoElement.current.videoHeight);
-        return canvas.toDataURL('image/webp', 1);
+        return canvas.toDataURL('image/webp', .7);
     };
 
     const resetDetectionAndRecognitionData = () => {
         resetFacePositionData();
         resetPredictionData();
     }
-     const resetFacePositionData = () => {
-         props.setFaceDetectionPosition({
-             x: undefined,
-             y: undefined,
-             w: undefined,
-             h: undefined
-         });
-     }
+    const resetFacePositionData = () => {
+        props.setFaceDetectionPosition({
+            x: undefined,
+            y: undefined,
+            w: undefined,
+            h: undefined,
+        });
+    }
 
-     const resetPredictionData = () => {
-         props.setPrediction({
-             ...props.predictions?.['prediction_a'],
-             result: undefined,
-             confidence: undefined,
-             target: 'a'
-         });
-         props.setPrediction({
-             ...props.predictions?.['prediction_b'],
-             result: undefined,
-             confidence: undefined,
-             target: 'b'
-         });
-     }
+    const resetPredictionData = () => {
+        props.setPrediction({
+            ...props.predictions?.['prediction_a'],
+            result: undefined,
+            confidence: undefined,
+            target: 'a',
+        });
+        props.setPrediction({
+            ...props.predictions?.['prediction_b'],
+            result: undefined,
+            confidence: undefined,
+            target: 'b',
+        });
+    }
 
-    useEffect(() => {
+    const openSocket = () => {
         socket.current = new WebSocket('ws://localhost:8889/ws');
         socket.current.onopen = () => console.log('connected');
         socket.current.onclose = () => {
@@ -226,10 +242,16 @@ const CameraFeedPlayer = (props: CameraFeedPlayerProps) => {
                 }
             }
         }
-        return () => {
-            socket.current.close();
-        }
-    }, []);
+    }
+
+    const closeSocket = () => {
+        setIsWaitingServerResponse(false);
+        socket.current.close();
+    }
+
+    const isSocketReady = () => socket.current.readyState === socket.current.OPEN;
+    const isSocketOffline = () => socket.current.readyState > socket.current.OPEN; // Covers CLOSING and CLOSED states
+
 
     useEffect(() => {
         if (isLiveStartedFirstRun.current) {
@@ -241,7 +263,7 @@ const CameraFeedPlayer = (props: CameraFeedPlayerProps) => {
 
     if (props.isLiveStarted) {
         return <div style={{width: '100%', height: '100%'}}>
-            <FaceDetectionSquare position={props.position} videoElement={videoElement} />
+            <FaceDetectionSquare position={props.position} videoElement={videoElement}/>
             <video id={'camera-feed'} autoPlay ref={videoElement} height={'100%'} width={'100%'}/>
         </div>
     }
