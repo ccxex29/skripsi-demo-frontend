@@ -153,8 +153,8 @@ const CameraFeedPlayer = (props: CameraFeedPlayerProps) => {
             refreshTimes--;
             const base64Image = getNewImage().next().value;
             const wsPayload = JSON.stringify({
-                architecture_a: props.selectedModels.model_a.value,
-                architecture_b: props.selectedModels.model_b.value,
+                architecture_a: props.selectedModels.model_a?.value,
+                architecture_b: props.selectedModels.model_b?.value,
                 image: base64Image.replace(/^.+,/, ''),
             });
             socket.current.send(wsPayload);
