@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import AsyncSelect from 'react-select/async';
 import styles from '../public/styles/ArchitectureSelector.module.sass';
 import {ArchitectureOption, ModelType, SelectedModelType} from '../interfaces/Model';
@@ -28,30 +28,50 @@ const getFlexAlignment = (alignment: string) => {
     return alignment;
 }
 
-const getArchitectureList = () => {
+
+const ArchitectureSelector = (props: PropsType) => {
+    const isFirstLoadArchitecture = useRef(true);
+    const [currentArchitecture, setCurrentArchitecture] = useState<SelectedModelType>();
+
+    useEffect(() => {
+        if (isFirstLoadArchitecture.current) {
+            isFirstLoadArchitecture.current = false;
+            return;
+        }
+        setCurrentArchitecture(props.selectedModel);
+    }, [props.selectedModel])
+
+    const getArchitectureList = () => {
         return fetch('http://localhost:8889')
             .then(response => response.json())
             .then(data => {
                 const keys = Object.keys(data);
-                return keys.map(key => {
+                const selectData = keys.map(key => {
                     return {
                         value: key,
                         label: data[key]
                     }
                 });
+                const firstSelectData = selectData?.[0] ?? {
+                    value: undefined,
+                    label: undefined,
+                };
+                setCurrentArchitecture(firstSelectData);
+                props.setModel({
+                    value: firstSelectData,
+                    target: props.isArchitectureA ? 'a' : 'b'
+                });
+                return selectData;
             })
             .catch((err) => {
                 console.error(err);
                 return [];
             });
-}
-
-const ArchitectureSelector = (props: PropsType) => {
+    }
     const handleChangeSelect = (value: ArchitectureOption) => {
-        const archType = props.isArchitectureA ? 'a' : 'b';
         props.setModel({
             value: value,
-            target: archType
+            target: props.isArchitectureA ? 'a' : 'b'
         });
     };
 
@@ -67,7 +87,7 @@ const ArchitectureSelector = (props: PropsType) => {
                 cacheOptions
                 className={styles.select}
                 onChange={handleChangeSelect}
-                value={props.selectedModel}
+                value={currentArchitecture}
                 loadOptions={getArchitectureList}
                 getOptionValue={(option: ArchitectureOption) => option.value}
                 getOptionLabel={(option: ArchitectureOption) => option.label}
