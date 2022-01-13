@@ -2,6 +2,7 @@ import {createStore, applyMiddleware} from 'redux';
 import thunkMiddleware from 'redux-thunk';
 import {SelectedModels} from '../interfaces/Model';
 import {Prediction} from '../interfaces/Prediction';
+import {ArchitectureModeType} from '../interfaces/ArchitectureMode';
 
 interface ReducerActions {
     type: string;
@@ -9,12 +10,13 @@ interface ReducerActions {
 }
 
 interface StateDataType {
-    modelList: object,
-    selectedModels: SelectedModels,
+    modelList: object;
+    architectureMode: ArchitectureModeType;
+    selectedModels: SelectedModels;
     predictions: {
         prediction_a: Prediction,
         prediction_b: Prediction,
-    },
+    };
     face_detection: {
         position: {
             x?: number,
@@ -22,11 +24,12 @@ interface StateDataType {
             w?: number,
             h?: number,
         }
-    }
+    };
 }
 
 const initialState: StateDataType = {
     modelList: {},
+    architectureMode: 'single',
     selectedModels: {
         model_a: undefined,
         model_b: undefined
@@ -53,7 +56,7 @@ const initialState: StateDataType = {
     }
 };
 
-const reducer = (state: any = initialState, action: ReducerActions) => {
+const reducer = (state = initialState, action: ReducerActions) => {
     switch (action.type) {
         case 'SET_MODEL_A':
             return {
@@ -93,6 +96,21 @@ const reducer = (state: any = initialState, action: ReducerActions) => {
                 face_detection: {
                     position: action.payload
                 }
+            }
+        case 'SET_ARCHITECTURE_MODE_COMPARE':
+            return {
+                ...state,
+                architectureMode: 'compare',
+            }
+        case 'SET_ARCHITECTURE_MODE_SINGLE':
+            return {
+                ...state,
+                architectureMode: 'single',
+            }
+        case 'FLIP_ARCHITECTURE_MODE':
+            return {
+                ...state,
+                architectureMode: state.architectureMode === 'single' ? 'compare' : 'single',
             }
         default:
             return state;

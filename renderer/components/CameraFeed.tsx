@@ -1,4 +1,4 @@
-import React, {MutableRefObject, Ref, useEffect, useRef, useState} from 'react';
+import React, {MutableRefObject, Ref, useEffect, useRef} from 'react';
 import styles from '../public/styles/CameraFeed.module.sass';
 import {FiCameraOff} from 'react-icons/fi';
 import {SelectedModels} from '../interfaces/Model';
@@ -8,6 +8,9 @@ import {Prediction, PredictionType} from '../interfaces/Prediction';
 import {FaceDetectionPosition} from '../interfaces/FaceDetectionPosition';
 import {setFaceDetectionPosition} from '../redux/faceDetectionPosition';
 import {PositionType} from '../interfaces/Position';
+import {ThunkDispatch} from 'redux-thunk';
+import {AnyAction} from 'redux';
+import {PredictionSocketPayload} from '../interfaces/SocketPayload';
 
 interface CameraFeedProps {
     readonly isLiveStarted: boolean;
@@ -19,7 +22,7 @@ interface CameraFeedProps {
     };
     setPrediction: (prediction: PredictionType) => void;
     setFaceDetectionPosition: (position: FaceDetectionPosition) => void;
-    handleIsLiveStarted: (e: React.MouseEvent<HTMLDivElement>) => void;
+    handleIsLiveStarted: (e?: React.MouseEvent<HTMLDivElement>) => void;
 }
 
 interface CameraFeedPlayerProps {
@@ -32,6 +35,7 @@ interface CameraFeedPlayerProps {
     };
     setPrediction: (prediction: PredictionType) => void;
     setFaceDetectionPosition: (position: FaceDetectionPosition) => void;
+    handleIsLiveStarted: (e?: React.MouseEvent<HTMLDivElement>) => void;
 }
 
 interface FaceDetectionSquareProps {
@@ -45,7 +49,7 @@ const MESSAGE_REFRESH_TIMINGS = {
     restoreRefreshIterationSecs: 1,
 }
 
-const mapStateToProps = (state: { selectedModels: SelectedModels, position: PositionType, predictions: { 'prediction_a': Prediction, 'prediction_b': Prediction } }) => {
+const mapStateToProps = (state: { selectedModels: SelectedModels, face_detection: {position: PositionType}, predictions: { 'prediction_a': Prediction, 'prediction_b': Prediction } }) => {
     return {
         selectedModels: state.selectedModels,
         position: state['face_detection'].position,
@@ -53,7 +57,7 @@ const mapStateToProps = (state: { selectedModels: SelectedModels, position: Posi
     }
 };
 
-const mapDispatchToProps = (dispatch) => {
+const mapDispatchToProps = (dispatch: ThunkDispatch<PredictionType|FaceDetectionPosition, unknown, AnyAction>) => {
     return {
         setPrediction: (prediction: PredictionType) => dispatch(setPrediction(prediction)),
         setFaceDetectionPosition: (position: FaceDetectionPosition) => dispatch(setFaceDetectionPosition(position)),
@@ -82,7 +86,7 @@ const CameraFeedPlayer = (props: CameraFeedPlayerProps) => {
                 openSocket();
                 stream.current = await navigator.mediaDevices.getUserMedia(constraints);
                 videoElement.current.srcObject = stream.current;
-                requestToServer();
+                setTimeout(requestToServer, 0);
                 return;
             }
             closeSocket();
@@ -97,8 +101,8 @@ const CameraFeedPlayer = (props: CameraFeedPlayerProps) => {
         return !stream.current || !stream.current.active || !videoElement.current;
     }
 
-    const requestToServer = async () => {
-        let lastRestoredRefreshTime = (new Date()).getTime()
+    const requestToServer = () => {
+        let lastRestoredRefreshTime: number = (new Date()).getTime()
         let refreshTimes = MESSAGE_REFRESH_TIMINGS.maxRefreshTimes;
 
         /**
@@ -118,48 +122,56 @@ const CameraFeedPlayer = (props: CameraFeedPlayerProps) => {
         /**
          * Refresh Limiter Count Restoration
          */
-        new Promise<void>(async (resolve) => {
-            while (true) {
+        (() => {
+            const refreshLimitRefresher = () => {
                 if (isSocketOffline() || isStreamInactive()) {
-                    resolve();
                     return;
                 }
-                await pauseTime(() => {
+                pauseTime(() => {
                     refreshTimes = MESSAGE_REFRESH_TIMINGS.maxRefreshTimes;
                     lastRestoredRefreshTime = (new Date()).getTime();
-                }, MESSAGE_REFRESH_TIMINGS.restoreRefreshIterationSecs * 1000);
+                    refreshLimitRefresher();
+                }, MESSAGE_REFRESH_TIMINGS.restoreRefreshIterationSecs * 1000)
+                    .catch(err => console.error(err));
             }
-        })
+            refreshLimitRefresher();
+        })();
 
         /**
          * Fetch Loop Logic
          */
-        while (true) {
-            if (isSocketOffline() || isStreamInactive()) {
-                return;
+        (() => {
+            const fetchLoop = () => {
+                if (isSocketOffline() || isStreamInactive()) {
+                    return;
+                }
+                if (!isSocketReady() || isWaiting) {
+                    console.warn('Waiting for server to keep up. Is the server lagging?');
+                    pauseTime(fetchLoop, MESSAGE_REFRESH_TIMINGS.minRoundaboutDelaySecs * 1000)
+                        .catch(err => console.error(err));
+                    return;
+                }
+                if (refreshTimes < 1) {
+                    pauseTime(fetchLoop, lastRestoredRefreshTime + (MESSAGE_REFRESH_TIMINGS.restoreRefreshIterationSecs * 1000) - (new Date()).getTime())
+                        .catch(err => console.error(err));
+                    return;
+                }
+                isWaiting = true;
+                refreshTimes--;
+                /* eslint-disable @typescript-eslint/no-unsafe-assignment */
+                const base64Image: string = getNewImage().next().value;
+                const objectWsPayload: PredictionSocketPayload = {
+                    architecture_a: props.selectedModels?.['model_a']?.value,
+                    architecture_b: props.selectedModels?.['model_b']?.value,
+                    image: base64Image.replace(/^.+,/, ''),
+                };
+                const wsPayload: string = JSON.stringify(objectWsPayload);
+                socket.current.send(wsPayload);
+                pauseTime(fetchLoop, MESSAGE_REFRESH_TIMINGS.minRoundaboutDelaySecs * 1000)
+                    .catch(err => console.error(err));
             }
-            if (!isSocketReady() || isWaiting) {
-                console.warn('Waiting for server to keep up. Is the server lagging?');
-                await pauseTime(() => {}, MESSAGE_REFRESH_TIMINGS.minRoundaboutDelaySecs * 1000);
-                continue;
-            }
-            if (refreshTimes < 1) {
-                await pauseTime(() => {
-                }, lastRestoredRefreshTime + (MESSAGE_REFRESH_TIMINGS.restoreRefreshIterationSecs * 1000) - (new Date()).getTime());
-            }
-            isWaiting = true;
-            // setIsWaitingServerResponse(true);
-            // console.log(isWaitingServerResponse);
-            refreshTimes--;
-            const base64Image = getNewImage().next().value;
-            const wsPayload = JSON.stringify({
-                architecture_a: props.selectedModels.model_a?.value,
-                architecture_b: props.selectedModels.model_b?.value,
-                image: base64Image.replace(/^.+,/, ''),
-            });
-            socket.current.send(wsPayload);
-            await pauseTime(() => {}, MESSAGE_REFRESH_TIMINGS.minRoundaboutDelaySecs * 1000);
-        }
+            fetchLoop();
+        })();
     }
 
     function* getNewImage(): Generator<string> {
@@ -214,28 +226,37 @@ const CameraFeedPlayer = (props: CameraFeedPlayerProps) => {
             console.info('socket disconnected');
         }
         socket.current.onmessage = (msgEvent) => {
-            const serverMessage = JSON.parse(msgEvent.data);
-            if (serverMessage.status === 'done') {
+            const msgEventData = msgEvent?.data;
+            if (typeof msgEventData !== 'string') {
+                return;
+            }
+            const serverMessage = JSON.parse(msgEventData);
+            if (serverMessage?.status === 'done') {
                 isWaiting = false;
-            } else if (serverMessage.status === 'error') {
+            } else if (serverMessage?.status === 'error') {
                 resetFacePositionData();
-            } else if (serverMessage.status === 'success') {
-                if (serverMessage.data.position) {
-                    props.setFaceDetectionPosition(serverMessage.data.position);
+            } else if (serverMessage?.status === 'success') {
+                if (serverMessage?.data?.position) {
+                    props.setFaceDetectionPosition({
+                        x: serverMessage?.data?.position?.x ?? undefined,
+                        y: serverMessage?.data?.position?.y ?? undefined,
+                        w: serverMessage?.data?.position?.w ?? undefined,
+                        h: serverMessage?.data?.position?.h ?? undefined,
+                    });
                 }
-                if (serverMessage.data.architecture_a) {
+                if (serverMessage?.data?.architecture_a) {
                     props.setPrediction({
-                        canonicalName: serverMessage.data.architecture_a.canonical_name,
-                        result: serverMessage.data.architecture_a.detection,
-                        confidence: serverMessage.data.architecture_a.confidence,
+                        canonicalName: serverMessage?.data?.architecture_a?.canonical_name,
+                        result: serverMessage?.data?.architecture_a?.detection,
+                        confidence: serverMessage?.data?.architecture_a?.confidence,
                         target: 'a',
                     });
                 }
-                if (serverMessage.data.architecture_b) {
+                if (serverMessage?.data?.architecture_b) {
                     props.setPrediction({
-                        canonicalName: serverMessage.data.architecture_b.canonical_name,
-                        result: serverMessage.data.architecture_b.detection,
-                        confidence: serverMessage.data.architecture_b.confidence,
+                        canonicalName: serverMessage?.data?.architecture_b?.canonical_name,
+                        result: serverMessage?.data?.architecture_b?.detection,
+                        confidence: serverMessage?.data?.architecture_b?.confidence,
                         target: 'b',
                     });
                 }
@@ -257,7 +278,8 @@ const CameraFeedPlayer = (props: CameraFeedPlayerProps) => {
             isLiveStartedFirstRun.current = false;
             return;
         }
-        setVideoElementObject();
+        setVideoElementObject()
+            .catch(err => console.error(err));
     }, [isLiveStarted]);
 
     if (props.isLiveStarted) {
@@ -300,6 +322,7 @@ const CameraFeed = (props: CameraFeedProps) => {
                 selectedModels={props.selectedModels}
                 setPrediction={props.setPrediction}
                 setFaceDetectionPosition={props.setFaceDetectionPosition}
+                handleIsLiveStarted={props.handleIsLiveStarted}
             />
         </div>
     );

@@ -21,8 +21,8 @@ const Settings = () => {
     ];
     const [showSettings, setShowSettings] = useState(false);
     const renderSettingsList = (): JSX.Element[] => {
-        let jsxList: JSX.Element[] = [];
-        for (let item of settingsList) {
+        const jsxList: JSX.Element[] = [];
+        for (const item of settingsList) {
             jsxList.push(
                 <React.Fragment key={item.name}>
                     <span>{item.name}
