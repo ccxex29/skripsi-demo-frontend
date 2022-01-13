@@ -1323,6 +1323,11 @@
   resolved "https://registry.yarnpkg.com/@types/ms/-/ms-0.7.31.tgz#31b7ca6407128a3d2bbc27fe2d21b345397f6197"
   integrity sha512-iiUgKzV9AuaEkZqkOLDIvlQiL6ltuZd9tGcW3gwpnX8JbuiuhFlEGmmFXEXkN50Cvq7Os88IY2v0dkDqXYWVgA==
 
+"@types/nconf@^0.10.1":
+  version "0.10.1"
+  resolved "https://registry.yarnpkg.com/@types/nconf/-/nconf-0.10.1.tgz#f726cb43f786ec46d8362106264e49085035ce06"
+  integrity sha512-5mv1YaLBjoKEHe9uztvKNVCQMBD+IGFfUo0lzHtiyHnEMMU0eMB3ithFDzMHBvIbYvjUvD9tD7rNHLyRz2bO/g==
+
 "@types/node@*":
   version "17.0.8"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-17.0.8.tgz#50d680c8a8a78fe30abe6906453b21ad8ab0ad7b"
