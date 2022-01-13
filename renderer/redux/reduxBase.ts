@@ -3,6 +3,7 @@ import thunkMiddleware from 'redux-thunk';
 import {SelectedModels} from '../interfaces/Model';
 import {Prediction} from '../interfaces/Prediction';
 import {ArchitectureModeType} from '../interfaces/ArchitectureMode';
+import {IOptions} from 'nconf';
 
 interface ReducerActions {
     type: string;
@@ -25,6 +26,7 @@ interface StateDataType {
             h?: number,
         }
     };
+    config: IOptions;
 }
 
 const initialState: StateDataType = {
@@ -53,7 +55,8 @@ const initialState: StateDataType = {
             w: undefined,
             h: undefined
         }
-    }
+    },
+    config: {},
 };
 
 const reducer = (state = initialState, action: ReducerActions) => {
@@ -111,6 +114,25 @@ const reducer = (state = initialState, action: ReducerActions) => {
             return {
                 ...state,
                 architectureMode: state.architectureMode === 'single' ? 'compare' : 'single',
+            }
+        case 'SET_GLOBAL_CONFIG':
+            if (typeof action.payload !== 'object') {
+                return state;
+            }
+            return {
+                ...state,
+                config: action.payload,
+            }
+        case 'SET_CONFIG':
+            if (typeof action.payload !== 'object') {
+                return state;
+            }
+            return {
+                ...state,
+                config: {
+                    ...state.config,
+                    ...action.payload
+                }
             }
         default:
             return state;

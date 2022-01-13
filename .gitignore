@@ -1,9 +1,13 @@
 node_modules
-*.log
 .next
 app
 dist
 
+# App runtime
+*.log
+config.json
+
 # IDE Specifics
 .idea
 .vscode
+flycheck*
