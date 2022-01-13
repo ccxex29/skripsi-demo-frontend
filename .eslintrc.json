@@ -1,0 +1,42 @@
+{
+  "root": true,
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "ecmaFeatures": {
+      "experimentalObjectRestSpread": true
+    }
+  },
+  "overrides": [
+    {
+      "files": ["*.ts", "*.tsx"],
+      "rules": {
+        "@typescript-eslint/no-unsafe-assignment": "off",
+        "@typescript-eslint/no-unsafe-member-access": "off",
+        "@typescript-eslint/restrict-template-expressions": "off"
+      },
+      "parserOptions": {
+        "tsconfigRootDir": ".",
+        "project": ["./tsconfig.json"]
+      },
+      "extends": [
+        "plugin:@typescript-eslint/recommended-requiring-type-checking"
+      ]
+    }
+  ],
+  "plugins": [
+    "@typescript-eslint"
+  ],
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended"
+  ],
+  "env": {
+    "browser": true,
+    "amd": true,
+    "node": true
+  },
+  "ignorePatterns": [
+    "**/main/*"
+  ]
+}

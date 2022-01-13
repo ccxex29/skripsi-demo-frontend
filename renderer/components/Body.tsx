@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import styles from '../public/styles/Body.module.sass';
 import LiveFeedControlButton from './LiveFeedControlButton';
 import CameraFeed from './CameraFeed';
@@ -7,11 +7,13 @@ import Settings from './Settings';
 import {FaceDetectionPosition} from '../interfaces/FaceDetectionPosition';
 import {connect} from 'react-redux';
 import {Prediction} from '../interfaces/Prediction';
+import {SelectedModels} from '../interfaces/Model';
 
-const mapStateToProps = (state: {'face_detection': {position: FaceDetectionPosition}, predictions: {'prediction_a': Prediction, 'prediction_b': Prediction}}) => {
+const mapStateToProps = (state: {'face_detection': {position: FaceDetectionPosition}, predictions: {'prediction_a': Prediction, 'prediction_b': Prediction}, selectedModels: SelectedModels}) => {
     return {
         position: state['face_detection'].position,
         predictions: state.predictions,
+        selectedModels: state.selectedModels,
     }
 }
 
@@ -21,7 +23,14 @@ const Body = (props) => {
     const predictionA = props.predictions['prediction_a'];
     const predictionB = props.predictions['prediction_b'];
 
-    const handleIsLiveStarted = (e: React.MouseEvent<HTMLElement>) => {
+    useEffect(() => {
+        if (!isLiveStarted) {
+            return;
+        }
+        handleIsLiveStarted();
+    }, [props.selectedModels]);
+
+    const handleIsLiveStarted = () => {
         setIsLiveStarted(prevState => !prevState);
     }
 

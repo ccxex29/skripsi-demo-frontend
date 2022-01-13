@@ -1,19 +1,31 @@
 import React, {useEffect, useRef, useState} from 'react';
 import AsyncSelect from 'react-select/async';
 import styles from '../public/styles/ArchitectureSelector.module.sass';
-import {ArchitectureOption, ModelType, SelectedModelType} from '../interfaces/Model';
+import {ArchitectureOption, ModelType, SelectedModels, SelectedModelType} from '../interfaces/Model';
 import {setModel} from '../redux/model';
 import {connect} from 'react-redux';
+import {ArchitectureModeType} from '../interfaces/ArchitectureMode';
+import {ThunkDispatch} from 'redux-thunk';
+import {AnyAction} from 'redux';
 
 interface PropsType {
     readonly alignment: string;
     readonly isArchitectureA?: boolean;
     readonly isArchitectureB?: boolean;
+    readonly selectedModels?: SelectedModels;
     readonly selectedModel?: SelectedModelType;
+    readonly architectureMode: ArchitectureModeType;
     setModel: (model: ModelType) => void;
 }
 
-const mapDispatchToProps = (dispatch) => {
+const mapStateToProps = (state: {architectureMode: ArchitectureModeType, selectedModels: SelectedModels}) => {
+    return {
+        architectureMode: state.architectureMode,
+        selectedModels: state.selectedModels,
+    }
+}
+
+const mapDispatchToProps = (dispatch: ThunkDispatch<ModelType, unknown, AnyAction>) => {
     return {
         setModel: (model: ModelType) => dispatch(setModel(model)),
     }
@@ -41,10 +53,19 @@ const ArchitectureSelector = (props: PropsType) => {
         setCurrentArchitecture(props.selectedModel);
     }, [props.selectedModel])
 
+    useEffect(() => {
+        if (!props.isArchitectureB || props.architectureMode === 'compare') {
+            return;
+        }
+        if (props.selectedModels.model_a !== props.selectedModels.model_b) {
+            handleChangeSelect(props.selectedModels.model_a);
+        }
+    }, [props.architectureMode])
+
     const getArchitectureList = () => {
         return fetch('http://localhost:8889')
             .then(response => response.json())
-            .then(data => {
+            .then((data: object) => {
                 const keys = Object.keys(data);
                 const selectData = keys.map(key => {
                     return {
@@ -69,10 +90,13 @@ const ArchitectureSelector = (props: PropsType) => {
             });
     }
     const handleChangeSelect = (value: ArchitectureOption) => {
-        props.setModel({
-            value: value,
-            target: props.isArchitectureA ? 'a' : 'b'
-        });
+        const targets = props.architectureMode === 'single' ? ['a', 'b'] : (props.isArchitectureA ? ['a'] : ['b']);
+        for (const target of targets) {
+            props.setModel({
+                value: value,
+                target: target
+            });
+        }
     };
 
     return (
@@ -83,7 +107,8 @@ const ArchitectureSelector = (props: PropsType) => {
                 SELECT ARCHITECTURE
             </div>
             <AsyncSelect
-                instanceId={`react-select-1`}
+                key={`sel-arch-${props.alignment}-select`}
+                instanceId={`sel-arch-${props.alignment}-select`}
                 cacheOptions
                 className={styles.select}
                 onChange={handleChangeSelect}
@@ -99,4 +124,4 @@ const ArchitectureSelector = (props: PropsType) => {
     );
 };
 
-export default connect(null, mapDispatchToProps)(ArchitectureSelector);
+export default connect(mapStateToProps, mapDispatchToProps)(ArchitectureSelector);

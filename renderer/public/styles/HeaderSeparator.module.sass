@@ -1,3 +1,5 @@
+@use "sass:math"
+
 .wrapper
     justify-self: stretch
     align-self: stretch
@@ -12,12 +14,20 @@
     background-color: var(--skripsi-proto-divider)
 
 .compareWrapper
+    $totalPadding: 10px
     position: absolute
     justify-self: center
     align-self: center
+    text-align: center
     background: var(--skripsi-proto-bg-header)
-    padding-block: 10px
+    padding-block: $totalPadding
     .compareText
-        padding: 10px
+        padding-block: math.div($totalPadding, 2) math.div($totalPadding, 2)
+        padding-inline: $totalPadding
         font-size: 20px
+        color: var(--skripsi-proto-compare-text)
+    .modeText
+        padding-bottom: math.div($totalPadding, 2) math.div($totalPadding, 2)
+        padding-inline: $totalPadding
+        font-size: 10px
         color: var(--skripsi-proto-compare-text)
