@@ -8,6 +8,8 @@ import {FaceDetectionPosition} from '../interfaces/FaceDetectionPosition';
 import {connect} from 'react-redux';
 import {Prediction} from '../interfaces/Prediction';
 import {SelectedModels} from '../interfaces/Model';
+import FloatingAction from './FloatingAction';
+import Refresh from './Refresh';
 
 const mapStateToProps = (state: {'face_detection': {position: FaceDetectionPosition}, predictions: {'prediction_a': Prediction, 'prediction_b': Prediction}, selectedModels: SelectedModels}) => {
     return {
@@ -36,7 +38,10 @@ const Body = (props) => {
 
     return (
         <div className={styles.wrapper}>
-            <Settings />
+            <FloatingAction>
+                <Settings />
+                <Refresh />
+            </FloatingAction>
             <DisplayMetrics title={`Architecture 1 (${predictionA?.canonicalName ?? 'N/A'})`} metricData={{
                 confidence: predictionA?.confidence,
                 detectionResult: predictionA?.result,

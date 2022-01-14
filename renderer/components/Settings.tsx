@@ -1,6 +1,7 @@
 import React, {useState} from 'react';
 import {FiSettings} from 'react-icons/fi';
 import styles from '../public/styles/Settings.module.sass';
+import buttonStyles from '../public/styles/FloatingAction.module.sass';
 
 interface SettingsListItem {
     name: string,
@@ -15,7 +16,7 @@ const Settings = () => {
             type: 'text'
         },
         {
-            name: 'Local Log',
+            name: 'Server Log',
             type: 'checkbox'
         }
     ];
@@ -39,7 +40,7 @@ const Settings = () => {
         setShowSettings(prevState => !prevState);
     };
     return (
-        <div className={styles.wrapper}>
+        <div>
             <div className={`${styles.popup} ${!showSettings ? styles.popupHidden : undefined}`}>
                 <div className={styles.popupTitle}>
                     Settings
@@ -49,7 +50,7 @@ const Settings = () => {
                     {renderSettingsList()}
                 </div>
             </div>
-            <div className={styles.switchBtn} onClick={handleFlipShowSettings}>
+            <div className={buttonStyles.switchBtn} onClick={handleFlipShowSettings}>
                 <FiSettings size={20} />
             </div>
         </div>

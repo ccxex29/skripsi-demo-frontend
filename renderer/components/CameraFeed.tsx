@@ -1,4 +1,4 @@
-import React, {MutableRefObject, Ref, useEffect, useRef} from 'react';
+import React, {MutableRefObject, Ref, useEffect, useRef, useState} from 'react';
 import styles from '../public/styles/CameraFeed.module.sass';
 import {FiCameraOff} from 'react-icons/fi';
 import {SelectedModels} from '../interfaces/Model';
@@ -11,6 +11,8 @@ import {PositionType} from '../interfaces/Position';
 import {ThunkDispatch} from 'redux-thunk';
 import {AnyAction} from 'redux';
 import {PredictionSocketPayload} from '../interfaces/SocketPayload';
+import {IOptions} from 'nconf';
+import defaults from '../strings/defaults';
 
 interface CameraFeedProps {
     readonly isLiveStarted: boolean;
@@ -20,6 +22,7 @@ interface CameraFeedProps {
         'prediction_a': Prediction,
         'prediction_b': Prediction,
     };
+    readonly config: IOptions;
     setPrediction: (prediction: PredictionType) => void;
     setFaceDetectionPosition: (position: FaceDetectionPosition) => void;
     handleIsLiveStarted: (e?: React.MouseEvent<HTMLDivElement>) => void;
@@ -27,6 +30,7 @@ interface CameraFeedProps {
 
 interface CameraFeedPlayerProps {
     readonly isLiveStarted: boolean;
+    readonly hostUrl: string;
     readonly selectedModels: SelectedModels;
     readonly position: PositionType;
     readonly predictions: {
@@ -49,15 +53,16 @@ const MESSAGE_REFRESH_TIMINGS = {
     restoreRefreshIterationSecs: 1,
 }
 
-const mapStateToProps = (state: { selectedModels: SelectedModels, face_detection: {position: PositionType}, predictions: { 'prediction_a': Prediction, 'prediction_b': Prediction } }) => {
+const mapStateToProps = (state: { config: IOptions, selectedModels: SelectedModels, face_detection: { position: PositionType }, predictions: { 'prediction_a': Prediction, 'prediction_b': Prediction } }) => {
     return {
         selectedModels: state.selectedModels,
         position: state['face_detection'].position,
         predictions: state.predictions,
+        config: state.config,
     }
 };
 
-const mapDispatchToProps = (dispatch: ThunkDispatch<PredictionType|FaceDetectionPosition, unknown, AnyAction>) => {
+const mapDispatchToProps = (dispatch: ThunkDispatch<PredictionType | FaceDetectionPosition, unknown, AnyAction>) => {
     return {
         setPrediction: (prediction: PredictionType) => dispatch(setPrediction(prediction)),
         setFaceDetectionPosition: (position: FaceDetectionPosition) => dispatch(setFaceDetectionPosition(position)),
@@ -219,7 +224,7 @@ const CameraFeedPlayer = (props: CameraFeedPlayerProps) => {
     }
 
     const openSocket = () => {
-        socket.current = new WebSocket('ws://localhost:8889/ws');
+        socket.current = new WebSocket(`ws://${props.hostUrl}/ws`);
         socket.current.onopen = () => console.info('socket connected');
         socket.current.onclose = () => {
             resetPredictionData();
@@ -313,6 +318,17 @@ const FaceDetectionSquare = (props: FaceDetectionSquareProps) => {
 };
 
 const CameraFeed = (props: CameraFeedProps) => {
+    const [hostUrl, setHostUrl] = useState(defaults.HOST_URL);
+    useEffect(() => {
+        if (! Object.entries(props.config).length) {
+            return;
+        }
+        const hostUrl = props.config?.backend?.host ?? defaults.HOST_URL;
+        if (typeof hostUrl !== 'string') {
+            return;
+        }
+        setHostUrl(hostUrl);
+    }, [props.config]);
     return (
         <div className={styles.wrapper} onClick={props.handleIsLiveStarted}>
             <CameraFeedPlayer
@@ -323,6 +339,7 @@ const CameraFeed = (props: CameraFeedProps) => {
                 setPrediction={props.setPrediction}
                 setFaceDetectionPosition={props.setFaceDetectionPosition}
                 handleIsLiveStarted={props.handleIsLiveStarted}
+                hostUrl={hostUrl}
             />
         </div>
     );

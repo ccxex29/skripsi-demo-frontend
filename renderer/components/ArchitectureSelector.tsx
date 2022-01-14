@@ -15,13 +15,15 @@ interface PropsType {
     readonly selectedModels?: SelectedModels;
     readonly selectedModel?: SelectedModelType;
     readonly architectureMode: ArchitectureModeType;
+    readonly refreshId: string;
     setModel: (model: ModelType) => void;
 }
 
-const mapStateToProps = (state: {architectureMode: ArchitectureModeType, selectedModels: SelectedModels}) => {
+const mapStateToProps = (state: {refreshId: string, architectureMode: ArchitectureModeType, selectedModels: SelectedModels}) => {
     return {
         architectureMode: state.architectureMode,
         selectedModels: state.selectedModels,
+        refreshId: state.refreshId,
     }
 }
 
@@ -107,15 +109,16 @@ const ArchitectureSelector = (props: PropsType) => {
                 SELECT ARCHITECTURE
             </div>
             <AsyncSelect
-                key={`sel-arch-${props.alignment}-select`}
+                key={`sel-arch-${props.alignment}-select-${props.refreshId}`}
                 instanceId={`sel-arch-${props.alignment}-select`}
                 cacheOptions
                 className={styles.select}
                 onChange={handleChangeSelect}
                 value={currentArchitecture}
-                loadOptions={getArchitectureList}
+                loadOptions={getArchitectureList.bind(this)}
                 getOptionValue={(option: ArchitectureOption) => option.value}
                 getOptionLabel={(option: ArchitectureOption) => option.label}
+                filterOption={() => true}
                 defaultOptions
                 placeholder={'Select Architecture...'}
                 isSearchable={false}
