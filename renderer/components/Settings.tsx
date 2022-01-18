@@ -85,7 +85,6 @@ const Settings = (props: SettingsProps) => {
     const renderSettingsList = (): JSX.Element[] => {
         const jsxList: JSX.Element[] = [];
         for (const item of settingsList) {
-            console.log(item.value);
             let itemElement = null;
             if (item.state === undefined) {
                 // @ts-ignore
