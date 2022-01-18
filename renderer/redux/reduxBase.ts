@@ -4,6 +4,7 @@ import {SelectedModels} from '../interfaces/Model';
 import {Prediction} from '../interfaces/Prediction';
 import {ArchitectureModeType} from '../interfaces/ArchitectureMode';
 import {IOptions} from 'nconf';
+import {randomUUID} from 'crypto';
 
 interface ReducerActions {
     type: string;
@@ -27,6 +28,7 @@ interface StateDataType {
         }
     };
     config: IOptions;
+    refreshId: string;
 }
 
 const initialState: StateDataType = {
@@ -57,6 +59,7 @@ const initialState: StateDataType = {
         }
     },
     config: {},
+    refreshId: randomUUID(),
 };
 
 const reducer = (state = initialState, action: ReducerActions) => {
@@ -133,6 +136,11 @@ const reducer = (state = initialState, action: ReducerActions) => {
                     ...state.config,
                     ...action.payload
                 }
+            }
+        case 'TRIGGER_REFRESH':
+            return {
+                ...state,
+                refreshId: action.payload
             }
         default:
             return state;
