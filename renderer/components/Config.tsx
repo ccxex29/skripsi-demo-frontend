@@ -4,6 +4,10 @@ import {connect} from 'react-redux';
 import {ThunkDispatch} from 'redux-thunk';
 import {AnyAction} from 'redux';
 import {setConfig} from '../redux/config';
+import getAppDataPath from 'appdata-path';
+import {name as packageName} from '../../package.json';
+import {join} from 'path';
+import defaults from '../strings/defaults';
 
 interface IndexProps {
     readonly config: IOptions;
@@ -36,9 +40,6 @@ const Config = (props: IndexProps) => {
                 console.error(err.message);
                 return;
             }
-            // fs.readFile('./config.json', (err, data) => {
-            //     console.dir(JSON.parse(data.toString()));
-            // });
         });
     }
     useEffect(() => {
@@ -49,7 +50,7 @@ const Config = (props: IndexProps) => {
         }
         nconf
             .file('config', {
-                file: './config.json',
+                file: join(getAppDataPath(packageName), defaults.CONFIG_FILENAME),
             });
         manualNconfSetDefault({
             'backend:host': nconf.get('backend:host') ?? 'localhost:8889',
@@ -62,7 +63,6 @@ const Config = (props: IndexProps) => {
         if (isFirstEffect.current) {
             isFirstEffect.current = false;
         }
-        console.log(props.config)
         setConfigFromState(props.config);
         saveNconf();
     }, [props.config]);

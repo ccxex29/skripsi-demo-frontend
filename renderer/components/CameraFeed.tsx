@@ -37,6 +37,7 @@ interface CameraFeedPlayerProps {
         'prediction_a': Prediction,
         'prediction_b': Prediction,
     };
+    readonly config: IOptions;
     setPrediction: (prediction: PredictionType) => void;
     setFaceDetectionPosition: (position: FaceDetectionPosition) => void;
     handleIsLiveStarted: (e?: React.MouseEvent<HTMLDivElement>) => void;
@@ -47,9 +48,11 @@ interface FaceDetectionSquareProps {
     videoElement: MutableRefObject<HTMLVideoElement | undefined>;
 }
 
+const FRAMES_PER_SECOND = 12
+
 const MESSAGE_REFRESH_TIMINGS = {
-    minRoundaboutDelaySecs: 1 / 15,
-    maxRefreshTimes: 15,
+    minRoundaboutDelaySecs: 1 / FRAMES_PER_SECOND,
+    maxRefreshTimes: FRAMES_PER_SECOND,
     restoreRefreshIterationSecs: 1,
 }
 
@@ -77,6 +80,10 @@ const CameraFeedPlayer = (props: CameraFeedPlayerProps) => {
     const videoElement = useRef<HTMLVideoElement>();
     let isWaiting = false;
 
+    let lastRestoredRefreshTime: number = (new Date()).getTime();
+    let lastMessageSendTime: number = undefined;
+    let refreshTimes = MESSAGE_REFRESH_TIMINGS.maxRefreshTimes;
+
     const constraints = {
         audio: false,
         video: {
@@ -84,6 +91,32 @@ const CameraFeedPlayer = (props: CameraFeedPlayerProps) => {
             height: 270,
         },
     };
+
+    /**
+     * Pause Function that returns a Promise of a function which has been wrapped inside setTimeout
+     * @param callback
+     * @param delay
+     */
+    const pauseTime = (callback: () => void, delay: number) => {
+        return new Promise<void>(resolve => {
+            setTimeout(() => {
+                callback();
+                resolve();
+            }, delay);
+        });
+    }
+
+    const getTime = () => {
+        return (new Date()).getTime();
+    }
+
+    const updateLastMessageSendTime = () => {
+        lastMessageSendTime = (new Date()).getTime();
+    }
+
+    const updateLastRestoredRefreshTime = () => {
+        lastRestoredRefreshTime = (new Date()).getTime();
+    }
 
     const setVideoElementObject = async () => {
         try {
@@ -106,77 +139,59 @@ const CameraFeedPlayer = (props: CameraFeedPlayerProps) => {
         return !stream.current || !stream.current.active || !videoElement.current;
     }
 
-    const requestToServer = () => {
-        let lastRestoredRefreshTime: number = (new Date()).getTime()
-        let refreshTimes = MESSAGE_REFRESH_TIMINGS.maxRefreshTimes;
-
-        /**
-         * Pause Function that returns a Promise of a function which has been wrapped inside setTimeout
-         * @param callback
-         * @param delay
-         */
-        const pauseTime = (callback: () => void, delay: number) => {
-            return new Promise<void>(resolve => {
-                setTimeout(() => {
-                    callback();
-                    resolve();
-                }, delay);
-            });
+    /**
+     * Refresh Limiter Count Restoration
+     */
+    const refreshLimitRefresher = () => {
+        if (isSocketOffline() || isStreamInactive()) {
+            return;
         }
-
-        /**
-         * Refresh Limiter Count Restoration
-         */
-        (() => {
-            const refreshLimitRefresher = () => {
-                if (isSocketOffline() || isStreamInactive()) {
-                    return;
-                }
-                pauseTime(() => {
-                    refreshTimes = MESSAGE_REFRESH_TIMINGS.maxRefreshTimes;
-                    lastRestoredRefreshTime = (new Date()).getTime();
-                    refreshLimitRefresher();
-                }, MESSAGE_REFRESH_TIMINGS.restoreRefreshIterationSecs * 1000)
-                    .catch(err => console.error(err));
-            }
+        pauseTime(() => {
+            refreshTimes = MESSAGE_REFRESH_TIMINGS.maxRefreshTimes;
+            updateLastRestoredRefreshTime();
             refreshLimitRefresher();
-        })();
+        }, MESSAGE_REFRESH_TIMINGS.restoreRefreshIterationSecs * 1000)
+            .catch(err => console.error(err));
+    }
 
-        /**
-         * Fetch Loop Logic
-         */
-        (() => {
-            const fetchLoop = () => {
-                if (isSocketOffline() || isStreamInactive()) {
-                    return;
-                }
-                if (!isSocketReady() || isWaiting) {
-                    console.warn('Waiting for server to keep up. Is the server lagging?');
-                    pauseTime(fetchLoop, MESSAGE_REFRESH_TIMINGS.minRoundaboutDelaySecs * 1000)
-                        .catch(err => console.error(err));
-                    return;
-                }
-                if (refreshTimes < 1) {
-                    pauseTime(fetchLoop, lastRestoredRefreshTime + (MESSAGE_REFRESH_TIMINGS.restoreRefreshIterationSecs * 1000) - (new Date()).getTime())
-                        .catch(err => console.error(err));
-                    return;
-                }
-                isWaiting = true;
-                refreshTimes--;
-                /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-                const base64Image: string = getNewImage().next().value;
-                const objectWsPayload: PredictionSocketPayload = {
-                    architecture_a: props.selectedModels?.['model_a']?.value,
-                    architecture_b: props.selectedModels?.['model_b']?.value,
-                    image: base64Image.replace(/^.+,/, ''),
-                };
-                const wsPayload: string = JSON.stringify(objectWsPayload);
-                socket.current.send(wsPayload);
-                pauseTime(fetchLoop, MESSAGE_REFRESH_TIMINGS.minRoundaboutDelaySecs * 1000)
-                    .catch(err => console.error(err));
-            }
-            fetchLoop();
-        })();
+    /**
+     * Fetch Loop Logic
+     */
+    const fetchLoop = () => {
+        if (isSocketOffline() || isStreamInactive()) {
+            return;
+        }
+        if (!isSocketReady() || isWaiting) {
+            console.warn('Waiting for server to keep up. Is the server lagging?');
+            pauseTime(fetchLoop, MESSAGE_REFRESH_TIMINGS.minRoundaboutDelaySecs * 1000)
+                .catch(err => console.error(err));
+            return;
+        }
+        if (refreshTimes < 1) {
+            pauseTime(fetchLoop, lastRestoredRefreshTime + (MESSAGE_REFRESH_TIMINGS.restoreRefreshIterationSecs * 1000) - (new Date()).getTime())
+                .catch(err => console.error(err));
+            return;
+        }
+        updateLastMessageSendTime();
+        isWaiting = true;
+        refreshTimes--;
+        /* eslint-disable @typescript-eslint/no-unsafe-assignment */
+        const base64Image: string = getNewImage().next().value;
+        const objectWsPayload: PredictionSocketPayload = {
+            architecture_a: props.selectedModels?.['model_a']?.value,
+            architecture_b: props.selectedModels?.['model_b']?.value,
+            image: base64Image.replace(/^.+,/, ''),
+            logging: props.config?.backend?.logging ?? defaults.HOST_LOGGING,
+        };
+        const wsPayload: string = JSON.stringify(objectWsPayload);
+        socket.current.send(wsPayload);
+        // pauseTime(fetchLoop, MESSAGE_REFRESH_TIMINGS.minRoundaboutDelaySecs * 1000)
+        //     .catch(err => console.error(err));
+    }
+
+    const requestToServer = () => {
+        refreshLimitRefresher();
+        fetchLoop();
     }
 
     function* getNewImage(): Generator<string> {
@@ -238,6 +253,15 @@ const CameraFeedPlayer = (props: CameraFeedPlayerProps) => {
             const serverMessage = JSON.parse(msgEventData);
             if (serverMessage?.status === 'done') {
                 isWaiting = false;
+                const deltaTime = getTime() - lastMessageSendTime
+                let pauseFor = -(deltaTime - (MESSAGE_REFRESH_TIMINGS.minRoundaboutDelaySecs * 1000));
+                pauseFor = pauseFor < 0 ? 0 : pauseFor;
+                const skippedFrames = (deltaTime / MESSAGE_REFRESH_TIMINGS.minRoundaboutDelaySecs / 1000).toFixed();
+                if (skippedFrames !== '0') {
+                    console.warn(`Skipped ${skippedFrames} frames`);
+                }
+                pauseTime(fetchLoop, pauseFor)
+                    .catch(err => console.error(err));
             } else if (serverMessage?.status === 'error') {
                 resetFacePositionData();
             } else if (serverMessage?.status === 'success') {
@@ -288,10 +312,12 @@ const CameraFeedPlayer = (props: CameraFeedPlayerProps) => {
     }, [isLiveStarted]);
 
     if (props.isLiveStarted) {
-        return <div style={{width: '100%', height: '100%'}}>
-            <FaceDetectionSquare position={props.position} videoElement={videoElement}/>
-            <video id={'camera-feed'} autoPlay ref={videoElement} height={'100%'} width={'100%'}/>
-        </div>
+        return (
+            <div style={{width: '100%', height: '100%'}}>
+                <FaceDetectionSquare position={props.position} videoElement={videoElement}/>
+                <video id={'camera-feed'} autoPlay ref={videoElement} height={'100%'} width={'100%'}/>
+            </div>
+        )
     }
     return <FiCameraOff color={'#fff'} size={30}/>;
 }
@@ -340,6 +366,7 @@ const CameraFeed = (props: CameraFeedProps) => {
                 setFaceDetectionPosition={props.setFaceDetectionPosition}
                 handleIsLiveStarted={props.handleIsLiveStarted}
                 hostUrl={hostUrl}
+                config={props.config}
             />
         </div>
     );
