@@ -239,7 +239,8 @@ const CameraFeedPlayer = (props: CameraFeedPlayerProps) => {
     }
 
     const openSocket = () => {
-        socket.current = new WebSocket(`ws://${props.hostUrl}/ws`);
+        const selectedHost: string = props.hostUrl ?? defaults.HOST_URL;
+        socket.current = new WebSocket(`ws${selectedHost.startsWith('localhost') ? '' : 's'}://${selectedHost}/ws`);
         socket.current.onopen = () => console.info('socket connected');
         socket.current.onclose = () => {
             resetPredictionData();

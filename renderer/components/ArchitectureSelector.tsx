@@ -69,7 +69,8 @@ const ArchitectureSelector = (props: PropsType) => {
     }, [props.architectureMode])
 
     const getArchitectureList = () => {
-        return fetch(`http://${props.config?.backend?.host ?? defaults.HOST_URL}`)
+        const selectedHost: string = props.config?.backend?.host ?? defaults.HOST_URL;
+        return fetch(`http${selectedHost.startsWith('localhost') ? '' : 's'}://${selectedHost}/`)
             .then(response => response.json())
             .then((data: object) => {
                 const keys = Object.keys(data);
