@@ -53,7 +53,7 @@ const Config = (props: IndexProps) => {
                 file: join(getAppDataPath(packageName), defaults.CONFIG_FILENAME),
             });
         manualNconfSetDefault({
-            'backend:host': nconf.get('backend:host') ?? 'localhost:8889',
+            'backend:host': nconf.get('backend:host') ?? defaults.HOST_URL,
             'backend:logging': false,
         });
         props.setConfig(nconf.get());

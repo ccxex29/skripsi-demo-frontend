@@ -3,8 +3,21 @@ import Head from 'next/head';
 import Header from '../components/Header';
 import Body from '../components/Body';
 import Config from '../components/Config';
+import {ConfigObjects} from '../interfaces/Config';
+import {connect} from 'react-redux';
+import defaults from '../strings/defaults';
 
-const Index = () => {
+interface IndexProps {
+    readonly config: ConfigObjects;
+}
+
+const mapStateToProps = (state: {config: ConfigObjects}) => {
+    return {
+        config: state.config,
+    }
+}
+
+const Index = (props: IndexProps) => {
     const pingFn = (simulatedBytes = 0) => {
         const time = {
             message: undefined,
@@ -14,7 +27,8 @@ const Index = () => {
         const now = () => {
             return (new Date()).getTime();
         }
-        const socket = new WebSocket('ws://localhost:8889/ws');
+        const selectedHost: string = props.config?.backend?.host ?? defaults.HOST_URL;
+        const socket = new WebSocket(`ws${selectedHost.startsWith('localhost') ? '' : 's'}://${selectedHost}/ws`);
         socket.onopen = () => {
             time.message = now();
             socket.send(`ping${'0'.repeat(simulatedBytes)}`);
@@ -60,4 +74,4 @@ const Index = () => {
     );
 };
 
-export default Index;
+export default connect(mapStateToProps, null)(Index);
