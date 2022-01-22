@@ -108,6 +108,6 @@ jobs:
           body: |
             ${{ needs.helpers.pkg-name }} auto built for ${{ needs.helpers.outputs.git-sha }}
           files: |
-            ${{ needs.helpers.outputs.pkg-desc }}-${{ needs.helpers.outputs.pkg-ver }}.AppImage
-            ${{ needs.helpers.outputs.pkg-desc }} Setup ${{ needs.helpers.outputs.pkg-ver }}.exe
-            ${{ needs.helpers.outputs.pkg-desc }}-${{ needs.helpers.outputs.pkg-ver }}.dmg
+            dist/${{ needs.helpers.outputs.pkg-desc }}-${{ needs.helpers.outputs.pkg-ver }}.AppImage
+            dist/${{ needs.helpers.outputs.pkg-desc }} Setup ${{ needs.helpers.outputs.pkg-ver }}.exe
+            dist/${{ needs.helpers.outputs.pkg-desc }}-${{ needs.helpers.outputs.pkg-ver }}.dmg
