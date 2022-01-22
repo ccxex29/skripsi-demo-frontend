@@ -41,7 +41,7 @@ jobs:
         run: sudo dpkg --add-architecture i386 && sudo apt-get update
       - name: Build App for Linux
         run: yarn build --linux
-      - name: Upload Linux AppImage Client
+      - name: Upload Linux AppImage & Snap Client
         uses: actions/upload-artifact@v2
         with:
           name: ${{ needs.helpers.outputs.pkg-name }}-${{ needs.helpers.outputs.pkg-ver }}-lin
@@ -87,7 +87,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Download Linux AppImage Client
+      - name: Download Linux AppImage & Snap Client
         uses: actions/download-artifact@v2
         with:
           name: ${{ needs.helpers.outputs.pkg-name }}-${{ needs.helpers.outputs.pkg-ver }}-lin
