@@ -105,5 +105,5 @@ jobs:
             ${{ needs.test-and-output.pkg-name }} auto built for ${{ github.ref }}
           files: |
             ${{ needs.test-and-output.outputs.pkg-desc }}-${{ needs.test-and-output.outputs.pkg-ver }}.AppImage
-            ${{ needs.test-and-output.outputs.pkg-desc }} ${{ needs.test-and-output.outputs.pkg-ver }}.exe
+            ${{ needs.test-and-output.outputs.pkg-desc }}-${{ needs.test-and-output.outputs.pkg-ver }}.exe
             ${{ needs.test-and-output.outputs.pkg-desc }}-${{ needs.test-and-output.outputs.pkg-ver }}.dmg
