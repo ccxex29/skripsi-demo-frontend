@@ -1,7 +1,7 @@
 name: CD
 
 on:
-  pull_request:
+  push:
     branches:
       - master
 
@@ -14,13 +14,13 @@ jobs:
       - uses: actions/checkout@v2
       - name: Get Release Name
         id: release-name
-        run: echo "::set-output name=pkg-name::$(cat package.json | jq '.name')"
+        run: echo "::set-output name=pkg-name::$(cat package.json | jq -r '.name')"
       - name: Get Release Description
         id: release-description
-        run: echo "::set-output name=pkg-desc::$(cat package.json | jq '.description')"
+        run: echo "::set-output name=pkg-desc::$(cat package.json | jq -r '.description')"
       - name: Get Release Version
         id: release-version
-        run: echo "::set-output name=pkg-ver::$(cat package.json | jq '.version')"
+        run: echo "::set-output name=pkg-ver::$(cat package.json | jq -r '.version')"
     outputs:
       pkg-name: ${{ steps.release-name.outputs.pkg-name }}
       pkg-desc: ${{ steps.release-description.outputs.pkg-desc }}
