@@ -45,7 +45,9 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: ${{ needs.helpers.outputs.pkg-name }}-${{ needs.helpers.outputs.pkg-ver }}-lin
-          path: dist/${{ needs.helpers.outputs.pkg-desc }}-${{ needs.helpers.outputs.pkg-ver }}.AppImage
+          path: |
+            dist/${{ needs.helpers.outputs.pkg-desc }}-${{ needs.helpers.outputs.pkg-ver }}.AppImage
+            dist/${{ needs.helpers.outputs.pkg-name }}_${{ needs.helpers.outputs.pkg-ver }}_amd64.snap
 
   build-macos:
     needs: helpers
@@ -109,5 +111,6 @@ jobs:
             ${{ needs.helpers.pkg-name }} auto built for ${{ needs.helpers.outputs.git-sha }}
           files: |
             ${{ needs.helpers.outputs.pkg-desc }}-${{ needs.helpers.outputs.pkg-ver }}.AppImage
+            ${{ needs.helpers.outputs.pkg-name }}_${{ needs.helpers.outputs.pkg-ver }}_amd64.snap
             ${{ needs.helpers.outputs.pkg-desc }} Setup ${{ needs.helpers.outputs.pkg-ver }}.exe
             ${{ needs.helpers.outputs.pkg-desc }}-${{ needs.helpers.outputs.pkg-ver }}.dmg
