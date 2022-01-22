@@ -98,12 +98,12 @@ jobs:
         with:
           name: ${{ needs.helpers.outputs.pkg-name }}-${{ needs.helpers.outputs.pkg-ver }}-mac
       - name: Release Packages
-        uses: actions/create-release@v1
+        uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ needs.helpers.outputs.git-sha }}
-          release_name: ${{ needs.helpers.outputs.pkg-ver }}-${{ needs.helpers.outputs.git-sha }}
+          name: ${{ needs.helpers.outputs.pkg-ver }}-${{ needs.helpers.outputs.git-sha }}
           prerelease: true
           body: |
             ${{ needs.helpers.pkg-name }} auto built for ${{ needs.helpers.outputs.git-sha }}
