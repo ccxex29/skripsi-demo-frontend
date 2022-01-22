@@ -44,7 +44,7 @@ jobs:
       pkg-desc: ${{ steps.release-description.outputs.pkg-desc }}
       pkg-ver: ${{ steps.release-version.outputs.pkg-ver }}
         
-  build-linuxwindows:
+  build-linux:
     needs: test-and-output
     runs-on: ubuntu-20.04
     
@@ -54,20 +54,13 @@ jobs:
         run: yarn install
       - name: Prepare Repo
         run: sudo dpkg --add-architecture i386 && sudo apt-get update
-      - name: Install wine for Windows build
-        run: sudo apt-get install --install-recommends -y wine wine32 || sudo apt-get install -f
-      - name: Build App for Linux and Windows
-        run: yarn build --linux --win --x64
+      - name: Build App for Linux
+        run: yarn build --linux
       - name: Upload Linux AppImage Client
         uses: actions/upload-artifact@v2
         with:
           name: ${{ needs.test-and-output.outputs.pkg-name }}-${{ needs.test-and-output.outputs.pkg-ver }}-lin
           path: dist/${{ needs.test-and-output.outputs.pkg-desc }}-${{ needs.test-and-output.outputs.pkg-ver }}.AppImage
-      - name: Upload Windows EXE Client
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{ needs.test-and-output.outputs.pkg-name }}-${{ needs.test-and-output.outputs.pkg-ver }}-win
-          path: dist/${{ needs.test-and-output.outputs.pkg-desc }} ${{ needs.test-and-output.outputs.pkg-ver }}.exe
           
   build-macos:
     needs: test-and-output
@@ -83,9 +76,27 @@ jobs:
         with:
           name: ${{ needs.test-and-output.outputs.pkg-name }}-${{ needs.test-and-output.outputs.pkg-ver }}-mac
           path: dist/${{ needs.test-and-output.outputs.pkg-desc }}-${{ needs.test-and-output.outputs.pkg-ver }}.dmg
+  
+  build-windows:
+    needs: test-and-output
+    runs-on: windows-2016
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@master
+        with:
+          node-version: 10.16
+      - name: Install Dependencies
+        run: yarn install
+      - name: Build App for Windows
+        run: yarn build --win
+      - name: Upload Windows EXE Client
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ needs.test-and-output.outputs.pkg-name }}-${{ needs.test-and-output.outputs.pkg-ver }}-win
+          path: dist/${{ needs.test-and-output.outputs.pkg-desc }} ${{ needs.test-and-output.outputs.pkg-ver }}.exe
         
   release:
-    needs: [test-and-output, build-linuxwindows, build-macos]
+    needs: [test-and-output, build-linux, build-macos, build-windows]
     runs-on: ubuntu-latest
     steps:
       - name: Download Linux AppImage Client
