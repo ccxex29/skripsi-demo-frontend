@@ -82,15 +82,15 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Download Linux AppImage Client
-        uses: action/download-artifact@v2
+        uses: actions/download-artifact@v2
         with:
           name: ${{ needs.helpers.outputs.pkg-name }}-${{ needs.helpers.outputs.pkg-ver }}-lin
       - name: Download Windows EXE Client
-        uses: action/download-artifact@v2
+        uses: actions/download-artifact@v2
         with:
           name: ${{ needs.helpers.outputs.pkg-name }} ${{ needs.helpers.outputs.pkg-ver }}-win
       - name: Download macOS DMG Client
-        uses: action/download-artifact@v2
+        uses: actions/download-artifact@v2
         with:
           name: ${{ needs.helpers.outputs.pkg-name }}-${{ needs.helpers.outputs.pkg-ver }}-mac
       - name: Release Packages
