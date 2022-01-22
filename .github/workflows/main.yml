@@ -46,12 +46,18 @@ jobs:
         
   build-linuxwindows:
     needs: test-and-output
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     
     steps:
       - uses: actions/checkout@v2
       - name: Install wine for Windows build
-        run: sudo dpkg --add-architecture i386 && sudo apt-get update && sudo apt-get install lib32z1 wine32:i386 wine64
+        run: |
+          sudo dpkg --add-architecture i386 && 
+          wget -nc https://dl.winehq.org/wine-builds/winehq.key &&
+          sudo apt-key add winehq.key &&
+          sudo add-apt-repository 'deb https://dl.winehq.org/wine-builds/ubuntu/ focal main' &&
+          sudo apt-get update && 
+          sudo apt-get install winehq-stable
       - name: Install Dependencies
         run: yarn install
       - name: Build App for Linux and Windows
