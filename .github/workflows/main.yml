@@ -16,7 +16,7 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
-  test:
+  test-and-output:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
@@ -30,20 +30,89 @@ jobs:
         run: yarn install
       - name: Run ESLint
         run: yarn eslint
+      - name: Get Commit SHA
+        id: git-sha
+        run: git rev-parse --short HEAD
+      - name: Get Release Name
+        id: release-name
+        run: cat package.json | jq '.name'
+      - name: Get Release Description
+        id: release-description
+        run: cat package.json | jq '.description'
+      - name: Get Release Version
+        id: release-version
+        run: cat package.json | jq '.version'
+    outputs:
+      git-sha: ${{ steps.git-sha.outputs }}
+      pkg-name: ${{ steps.release-name.outputs }}
+      pkg-desc: ${{ steps.release-description.outputs }}
+      pkg-ver: ${{ steps.release-version.outputs }}
+        
   build-linuxwindows:
+    needs: test-and-output
     runs-on: ubuntu-latest
+    
     steps:
       - uses: actions/checkout@v2
+      - name: Install wine for Windows build
+        run: sudo apt-get install wine 
       - name: Install Dependencies
         run: yarn install
-      - name: Build App for Linux
+      - name: Build App for Linux and Windows
         run: yarn build --linux --win
+      - name: Upload Linux AppImage Client
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ needs.test-and-output.outputs.pkg-name }}-${{ needs.test-and-output.outputs.pkg-ver }}-lin
+          path: dist/${{ needs.test-and-output.outputs.pkg-desc }}-${{ needs.test-and-output.outputs.pkg-ver }}.AppImage
+      - name: Upload Windows EXE Client
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ needs.test-and-output.outputs.pkg-name }}-${{ needs.test-and-output.outputs.pkg-ver }}-win
+          path: dist/${{ needs.test-and-output.outputs.pkg-desc }} ${{ needs.test-and-output.outputs.pkg-ver }}.exe
+          
   build-macos:
+    needs: test-and-output
     runs-on: macOS-latest
     steps:
       - uses: actions/checkout@v2
-      
       - name: Install Dependencies
         run: yarn install
       - name: Build App for macOS
         run: yarn build --mac
+      - name: Upload macOS DMG Client
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ needs.test-and-output.outputs.pkg-name }}-${{ needs.test-and-output.outputs.pkg-ver }}-mac
+          path: dist/${{ needs.test-and-output.outputs.pkg-desc }}-${{ needs.test-and-output.outputs.pkg-ver }}.dmg
+        
+  release:
+    needs: [test-and-output, build-linuxwindows, build-macos]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Linux AppImage Client
+        uses: action/download-artifact@v2
+        with:
+          name: ${{ needs.test-and-output.outputs.pkg-name }}-${{ needs.test-and-output.outputs.pkg-ver }}-lin
+      - name: Download Windows EXE Client
+        uses: action/download-artifact@v2
+        with:
+          name: ${{ needs.test-and-output.outputs.pkg-name }} ${{ needs.test-and-output.outputs.pkg-ver }}-win
+      - name: Download macOS DMG Client
+        uses: action/download-artifact@v2
+        with:
+          name: ${{ needs.test-and-output.outputs.pkg-name }}-${{ needs.test-and-output.outputs.pkg-ver }}-mac
+      - name: Release Packages
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: ${{ needs.test-and-output.pkg-ver }}-${{ github.ref }}
+          prerelease: true
+          body: |
+            ${{ needs.test-and-output.pkg-name }} auto built for ${{ github.ref }}
+          files: |
+            ${{ needs.test-and-output.outputs.pkg-desc }}-${{ needs.test-and-output.outputs.pkg-ver }}.AppImage
+            ${{ needs.test-and-output.outputs.pkg-desc }} ${{ needs.test-and-output.outputs.pkg-ver }}.exe
+            ${{ needs.test-and-output.outputs.pkg-desc }}-${{ needs.test-and-output.outputs.pkg-ver }}.dmg
