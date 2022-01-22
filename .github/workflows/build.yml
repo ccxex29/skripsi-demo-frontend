@@ -86,7 +86,6 @@ jobs:
     needs: [helpers, build-linux, build-macos, build-windows]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
       - name: Download Linux AppImage & Snap Client
         uses: actions/download-artifact@v2
         with:
