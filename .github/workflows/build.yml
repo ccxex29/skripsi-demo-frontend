@@ -59,7 +59,7 @@ jobs:
           path: dist/${{ needs.helpers.outputs.pkg-desc }}-${{ needs.helpers.outputs.pkg-ver }}.dmg
 
   build-windows:
-    needs: test-and-output
+    needs: helpers
     runs-on: windows-2016
     steps:
       - uses: actions/checkout@v2
