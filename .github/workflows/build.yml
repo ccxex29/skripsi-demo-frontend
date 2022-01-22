@@ -74,7 +74,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: ${{ needs.helpers.outputs.pkg-name }}-${{ needs.helpers.outputs.pkg-ver }}-win
-          path: dist/${{ needs.helpers.outputs.pkg-desc }} ${{ needs.helpers.outputs.pkg-ver }}.exe
+          path: dist/${{ needs.helpers.outputs.pkg-desc }} Setup ${{ needs.helpers.outputs.pkg-ver }}.exe
 
   release:
     needs: [helpers, build-linux, build-macos, build-windows]
@@ -105,5 +105,5 @@ jobs:
             ${{ needs.test-and-output.pkg-name }} auto built for ${{ github.ref }}
           files: |
             ${{ needs.test-and-output.outputs.pkg-desc }}-${{ needs.test-and-output.outputs.pkg-ver }}.AppImage
-            ${{ needs.test-and-output.outputs.pkg-desc }} ${{ needs.test-and-output.outputs.pkg-ver }}.exe
+            ${{ needs.test-and-output.outputs.pkg-desc }} Setup ${{ needs.test-and-output.outputs.pkg-ver }}.exe
             ${{ needs.test-and-output.outputs.pkg-desc }}-${{ needs.test-and-output.outputs.pkg-ver }}.dmg
