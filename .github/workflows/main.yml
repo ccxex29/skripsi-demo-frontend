@@ -51,7 +51,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Install wine for Windows build
-        run: sudo dpkg --add-architecture i386 && sudo apt-get update && sudo apt-get install lib32z1wine32:i386 wine64
+        run: sudo dpkg --add-architecture i386 && sudo apt-get update && sudo apt-get install lib32z1 wine32:i386 wine64
       - name: Install Dependencies
         run: yarn install
       - name: Build App for Linux and Windows
