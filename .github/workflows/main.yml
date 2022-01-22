@@ -57,8 +57,7 @@ jobs:
           sudo apt-key add winehq.key &&
           sudo add-apt-repository 'deb https://dl.winehq.org/wine-builds/ubuntu/ focal main' &&
           sudo apt-get update && 
-          sudo apt-get upgrade &&
-          sudo apt-get install winehq-stable
+          sudo apt-get install --install-recommends winehq-stable
       - name: Install Dependencies
         run: yarn install
       - name: Build App for Linux and Windows
