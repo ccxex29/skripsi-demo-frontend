@@ -37,10 +37,13 @@ jobs:
       - name: Install Dependencies
         run: yarn install
       - name: Build App for Linux
-        run: yarn build --linux
+        run: yarn build --linux --win
   build-macos:
     runs-on: macOS-latest
     steps:
       - uses: actions/checkout@v2
+      
+      - name: Install Dependencies
+        run: yarn install
       - name: Build App for macOS
         run: yarn build --mac
