@@ -53,9 +53,11 @@ jobs:
       - name: Install wine for Windows build
         run: |
           sudo dpkg --add-architecture i386 && 
+          wget -nc https://dl.winehq.org/wine-builds/winehq.key &&
+          sudo apt-key add winehq.key &&
           sudo apt-get update && 
           sudo apt-get upgrade &&
-          sudo apt-get install wine64 wine32
+          sudo apt-get install winehq-stable
       - name: Install Dependencies
         run: yarn install
       - name: Build App for Linux and Windows
