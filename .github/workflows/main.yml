@@ -30,23 +30,19 @@ jobs:
         run: yarn install
       - name: Run ESLint
         run: yarn eslint
-      - name: Get Commit SHA
-        id: git-sha
-        run: git rev-parse --short HEAD
       - name: Get Release Name
         id: release-name
-        run: cat package.json | jq '.name'
+        run: echo "::set-output name=pkg-name::$(cat package.json | jq '.name')"
       - name: Get Release Description
         id: release-description
-        run: cat package.json | jq '.description'
+        run: echo "::set-output name=pkg-desc::$(cat package.json | jq '.description')"
       - name: Get Release Version
         id: release-version
-        run: cat package.json | jq '.version'
+        run: echo "::set-output name=pkg-ver::$(cat package.json | jq '.version')"
     outputs:
-      git-sha: ${{ steps.git-sha.outputs }}
-      pkg-name: ${{ steps.release-name.outputs }}
-      pkg-desc: ${{ steps.release-description.outputs }}
-      pkg-ver: ${{ steps.release-version.outputs }}
+      pkg-name: ${{ steps.release-name.outputs.pkg-name }}
+      pkg-desc: ${{ steps.release-description.outputs.pkg-desc }}
+      pkg-ver: ${{ steps.release-version.outputs.pkg-ver }}
         
   build-linuxwindows:
     needs: test-and-output
