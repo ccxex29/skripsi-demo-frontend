@@ -9,6 +9,7 @@ import {ThunkDispatch} from 'redux-thunk';
 import {AnyAction} from 'redux';
 import {ConfigObjects} from '../interfaces/Config';
 import defaults from '../strings/defaults';
+import colours from '../strings/colours';
 
 interface PropsType {
     readonly alignment: string;
@@ -127,6 +128,16 @@ const ArchitectureSelector = (props: PropsType) => {
                 defaultOptions
                 placeholder={'Select Architecture...'}
                 isSearchable={false}
+                theme={(theme) => ({
+                    ...theme,
+                    colors: {
+                        ...theme.colors,
+                        primary: colours['yellow-1'],
+                        primary75: colours['yellow-1'] + 'BF',
+                        primary50: colours['yellow-1'] + '7F',
+                        primary25: colours['yellow-1'] + '3F',
+                    }
+                })}
             />
         </div>
     );
