@@ -7,11 +7,27 @@
     display: flex
     justify-content: center
     position: relative
-
-.line
-    height: 100%
-    width: 1px
-    background-color: var(--skripsi-proto-divider)
+    cursor: pointer
+    &:hover
+        .line
+            height: calc(100% + 40px)
+            transform: rotate(90deg) translateX(-20px)
+            transition: transform, height, background-color
+            transition-duration: .2s
+            transition-timing-function: ease-in
+            background-color: var(--skripsi-proto-accent)
+        .compareText
+            color: var(--skripsi-proto-accent)
+            transition: color .2s ease-in
+        .modeText
+            color: var(--skripsi-proto-accent)
+            transition: color .2s ease-in
+    .line
+        transition: transform .2s ease-in, height .2s ease-in
+        height: 100%
+        position: relative
+        width: 1px
+        background-color: var(--skripsi-proto-divider)
 
 .compareWrapper
     $totalPadding: 10px
@@ -26,8 +42,10 @@
         padding-inline: $totalPadding
         font-size: 20px
         color: var(--skripsi-proto-compare-text)
+        transition: color .2s ease-in
     .modeText
         padding-bottom: math.div($totalPadding, 2) math.div($totalPadding, 2)
         padding-inline: $totalPadding
         font-size: 10px
         color: var(--skripsi-proto-compare-text)
+        transition: color .2s ease-in
