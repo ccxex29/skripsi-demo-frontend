@@ -6,7 +6,7 @@ import {ThunkDispatch} from 'redux-thunk';
 import {AnyAction} from 'redux';
 import {setProfile} from '../redux/profile';
 import {SelectedModels} from '../interfaces/Model';
-import {flipArchitectureMode, setArchitectureMode} from '../redux/architectureMode';
+import {setArchitectureMode} from '../redux/architectureMode';
 
 interface ProfileSwitcherProps {
     readonly profiles: ProfileList;
