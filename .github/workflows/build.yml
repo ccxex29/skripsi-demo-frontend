@@ -1,12 +1,8 @@
 name: CD
 
 on:
-  workflow_run:
-    workflows: ["CI"]
-    branches: [master]
-    types: 
-      - completed
-
+  workflow_dispatch:
+    types: [build_success]
 
 jobs:
   helpers:
@@ -31,6 +27,13 @@ jobs:
       - name: Get Release Version
         id: release-version
         run: echo "::set-output name=pkg-ver::$(cat package.json | jq -r '.version')"
+      - name: Wait for test pipeline to succeed
+        uses: lewagon/wait-on-check-action@v1.0.0
+        with:
+          ref: master
+          check-name: CI
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 10
     outputs:
       git-sha: ${{ steps.git-sha.outputs.git-sha }}
       curr-time: ${{ steps.current-time.outputs.curr-time }}
