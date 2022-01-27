@@ -42,48 +42,51 @@ const mapDispatchToProps = (dispatch: ThunkDispatch<string|boolean, unknown, Any
 }
 
 const Settings = (props: SettingsProps) => {
-    const [editingHostUrl, setEditingHostUrl] = useState(false)
-    const settingsList: SettingsListItem[] = [
-        {
-            name: 'Host',
-            type: 'text',
-            state: editingHostUrl,
-            flipState: () => {
-                setEditingHostUrl(!editingHostUrl)
-            },
-            handler: (e: ChangeEvent<HTMLInputElement>) => {
-                props.setHost(e.target.value);
-            },
-            resetHandler: () => {
-                props.setHost(defaults.HOST_URL)
-            },
-            value: props.config?.backend?.host,
-            saveIcon: <FiSave />,
-            editIcon: <FiEdit />,
-            resetIcon: <FiRepeat />,
-        },
-        {
-            name: 'Server Log',
-            type: 'checkbox',
-            handler: () => {
-                const logging = !props.config?.backend?.logging;
-                if (logging === undefined) {
-                    return;
-                }
-                if (logging && !confirm('Enabling server log means sending your face to the server.\nHowever, any of the logged data would not publicised unless you allow us to.')) {
-                    return;
-                }
-                props.setLogging(logging);
-            },
-            resetHandler: () => {
-                props.setLogging(defaults.HOST_LOGGING)
-            },
-            value: props.config?.backend?.logging
-        }
-    ];
     const [showSettings, setShowSettings] = useState(false);
+
     const renderSettingsList = (): JSX.Element[] => {
+        const [editingHostUrl, setEditingHostUrl] = useState(false)
         const jsxList: JSX.Element[] = [];
+        const settingsList: SettingsListItem[] = [
+            {
+                name: 'Host',
+                type: 'text',
+                state: editingHostUrl,
+                flipState: () => {
+                    setEditingHostUrl(isEditing => !isEditing)
+                },
+                handler: (e: ChangeEvent<HTMLInputElement>) => {
+                    const value = e.target.value;
+                    if (typeof value !== 'string') {
+                        return;
+                    }
+                    props.setHost(value);
+                },
+                resetHandler: () => {
+                    props.setHost(defaults.HOST_URL)
+                },
+                value: props.config?.backend?.host,
+                saveIcon: <FiSave />,
+                editIcon: <FiEdit />,
+                resetIcon: <FiRepeat />,
+            },
+            {
+                name: 'Server Log',
+                type: 'checkbox',
+                handler: () => {
+                    const logging = !props.config?.backend?.logging;
+                    if (logging === undefined) {
+                        return;
+                    }
+                    if (logging && !confirm('Enabling server log means sending your face to the server.\nHowever, any of the logged data would not publicised unless you allow us to.')) {
+                        return;
+                    }
+                    props.setLogging(logging ?? false);
+                },
+                resetHandler: () => props.setLogging(defaults.HOST_LOGGING),
+                value: props.config?.backend?.logging
+            }
+        ];
         for (const item of settingsList) {
             let itemElement = null;
             if (item.state === undefined) {
@@ -116,9 +119,11 @@ const Settings = (props: SettingsProps) => {
         }
         return jsxList;
     }
+
     const handleFlipShowSettings = () => {
         setShowSettings(prevState => !prevState);
     };
+
     return (
         <div>
             <div className={`${styles.popup} ${!showSettings ? styles.popupHidden : undefined}`}>

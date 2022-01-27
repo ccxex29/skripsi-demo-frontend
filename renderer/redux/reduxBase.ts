@@ -27,6 +27,8 @@ interface StateDataType {
             h?: number,
         }
     };
+    profiles: [string, string][];
+    selected_profile?: number;
     config: IOptions;
     refreshId: string;
 }
@@ -58,6 +60,8 @@ const initialState: StateDataType = {
             h: undefined
         }
     },
+    profiles: [],
+    selected_profile: undefined,
     config: {},
     refreshId: randomUUID(),
 };
@@ -117,6 +121,19 @@ const reducer = (state = initialState, action: ReducerActions) => {
             return {
                 ...state,
                 architectureMode: state.architectureMode === 'single' ? 'compare' : 'single',
+            }
+        case 'SET_PROFILE_LIST':
+            return {
+                ...state,
+                profiles: action.payload,
+            }
+        case 'SET_PROFILE':
+            if (action.payload === undefined) {
+                return state;
+            }
+            return {
+                ...state,
+                selected_profile: action.payload,
             }
         case 'SET_GLOBAL_CONFIG':
             if (typeof action.payload !== 'object') {

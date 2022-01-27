@@ -10,6 +10,7 @@ import {Prediction} from '../interfaces/Prediction';
 import {SelectedModels} from '../interfaces/Model';
 import FloatingAction from './FloatingAction';
 import Refresh from './Refresh';
+import ProfileSwitcher from './ProfileSwitcher';
 
 const mapStateToProps = (state: {'face_detection': {position: FaceDetectionPosition}, predictions: {'prediction_a': Prediction, 'prediction_b': Prediction}, selectedModels: SelectedModels}) => {
     return {
@@ -54,6 +55,7 @@ const Body = (props) => {
                     <LiveFeedControlButton handleIsLiveStarted={handleIsLiveStarted} isLiveStarted={isLiveStarted} />
                 </div>
             </div>
+            <ProfileSwitcher />
             <DisplayMetrics title={`Architecture 2 (${predictionB?.canonicalName ?? 'N/A'})`} metricData={{
                 confidence: predictionB?.confidence,
                 detectionResult: predictionB?.result,

@@ -2,14 +2,15 @@ import React, {useEffect, useRef, useState} from 'react';
 import AsyncSelect from 'react-select/async';
 import styles from '../public/styles/ArchitectureSelector.module.sass';
 import {ArchitectureOption, ModelType, SelectedModels, SelectedModelType} from '../interfaces/Model';
+import {Profile, ProfileList} from '../interfaces/Profile';
 import {setModel} from '../redux/model';
 import {connect} from 'react-redux';
 import {ArchitectureModeType} from '../interfaces/ArchitectureMode';
 import {ThunkDispatch} from 'redux-thunk';
 import {AnyAction} from 'redux';
 import {ConfigObjects} from '../interfaces/Config';
-import defaults from '../strings/defaults';
 import colours from '../strings/colours';
+import {setProfiles} from '../redux/profile';
 
 interface PropsType {
     readonly alignment: string;
@@ -20,21 +21,27 @@ interface PropsType {
     readonly architectureMode: ArchitectureModeType;
     readonly refreshId: string;
     readonly config: ConfigObjects;
-    setModel: (model: ModelType) => void;
+    readonly profiles: ProfileList;
+    readonly profile: Profile;
+    readonly setModel: (model: ModelType) => void;
+    readonly setProfiles: (profiles: ProfileList) => void;
 }
 
-const mapStateToProps = (state: {config: ConfigObjects, refreshId: string, architectureMode: ArchitectureModeType, selectedModels: SelectedModels}) => {
+const mapStateToProps = (state: { config: ConfigObjects, refreshId: string, architectureMode: ArchitectureModeType, selectedModels: SelectedModels, selected_profile: Profile, profiles: ProfileList }) => {
     return {
         architectureMode: state.architectureMode,
         selectedModels: state.selectedModels,
         refreshId: state.refreshId,
         config: state.config,
+        profiles: state.profiles,
+        profile: state.selected_profile,
     }
 }
 
-const mapDispatchToProps = (dispatch: ThunkDispatch<ModelType, unknown, AnyAction>) => {
+const mapDispatchToProps = (dispatch: ThunkDispatch<ModelType|ProfileList, unknown, AnyAction>) => {
     return {
         setModel: (model: ModelType) => dispatch(setModel(model)),
+        setProfiles: (profiles: ProfileList) => dispatch(setProfiles(profiles)),
     }
 };
 
@@ -47,10 +54,35 @@ const getFlexAlignment = (alignment: string) => {
     return alignment;
 }
 
+interface GetArchitectureData {
+    data: {
+        model_list: object,
+        profile_list: ProfileList,
+    };
+}
 
 const ArchitectureSelector = (props: PropsType) => {
     const isFirstLoadArchitecture = useRef(true);
+    const isFirstLoadProfile = useRef(true);
+    const [architectureList, setArchitectureList] = useState([]);
     const [currentArchitecture, setCurrentArchitecture] = useState<SelectedModelType>();
+
+    useEffect(() => {
+        if (isFirstLoadProfile.current) {
+            isFirstLoadProfile.current = false;
+            return;
+        }
+        const nameKey = props.isArchitectureA ? 0 : 1;
+        const name = props.profiles[props.profile][nameKey];
+        const label = architectureList.filter(arch => arch['value'] === name)[0]['label'];
+        props.setModel({
+            value: {
+                value: name,
+                label: label,
+            },
+            target: !nameKey ? 'a' : 'b',
+        });
+    }, [props.profile]);
 
     useEffect(() => {
         if (isFirstLoadArchitecture.current) {
@@ -70,15 +102,18 @@ const ArchitectureSelector = (props: PropsType) => {
     }, [props.architectureMode])
 
     const getArchitectureList = () => {
-        const selectedHost: string = props.config?.backend?.host ?? defaults.HOST_URL;
+        const selectedHost: string = props.config?.backend?.host;
+        if (!selectedHost) {
+            return;
+        }
         return fetch(`http${selectedHost.startsWith('localhost') ? '' : 's'}://${selectedHost}/`)
             .then(response => response.json())
-            .then((data: object) => {
-                const keys = Object.keys(data);
+            .then((data: GetArchitectureData) => {
+                const keys = Object.keys(data['data']['model_list']);
                 const selectData = keys.map(key => {
                     return {
                         value: key,
-                        label: data[key]
+                        label: data['data']['model_list'][key]
                     }
                 });
                 const firstSelectData = selectData?.[0] ?? {
@@ -86,10 +121,12 @@ const ArchitectureSelector = (props: PropsType) => {
                     label: undefined,
                 };
                 setCurrentArchitecture(firstSelectData);
+                setArchitectureList(selectData);
                 props.setModel({
                     value: firstSelectData,
                     target: props.isArchitectureA ? 'a' : 'b'
                 });
+                props.setProfiles(data['data']['profile_list']);
                 return selectData;
             })
             .catch((err) => {
