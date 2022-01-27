@@ -8,11 +8,13 @@ import getAppDataPath from 'appdata-path';
 import {name as packageName} from '../../package.json';
 import {join} from 'path';
 import defaults from '../strings/defaults';
+import {triggerRefresh} from '../redux/refresh';
 
 interface IndexProps {
     readonly config: IOptions;
     children: JSX.Element[];
     setConfig: (IOptions) => void;
+    triggerRefresh: () => void;
 }
 
 const mapStateToProps = (state: {config: IOptions}) => {
@@ -24,6 +26,7 @@ const mapStateToProps = (state: {config: IOptions}) => {
 const mapDispatchToProps = (dispatch: ThunkDispatch<IOptions, unknown, AnyAction>) => {
     return {
         setConfig: (config: IOptions) => dispatch(setConfig(config)),
+        triggerRefresh: () => dispatch(triggerRefresh()),
     }
 }
 
@@ -58,6 +61,7 @@ const Config = (props: IndexProps) => {
         });
         props.setConfig(nconf.get());
         saveNconf();
+        props.triggerRefresh();
     }, []);
     useEffect(() => {
         if (isFirstEffect.current) {
