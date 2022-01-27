@@ -18,10 +18,7 @@ const mapStateToProps = (state: {architectureMode: ArchitectureModeType}) => {
 }
 const mapDispatchToProps = (dispatch: ThunkDispatch<void, unknown, AnyAction>) => {
     return {
-        flipArchitectureMode: (): void => {
-            dispatch(flipArchitectureMode());
-            return;
-        },
+        flipArchitectureMode: () => dispatch(flipArchitectureMode()),
     }
 }
 
