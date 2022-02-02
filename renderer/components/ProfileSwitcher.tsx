@@ -35,13 +35,13 @@ const ProfileSwitcher = (props: ProfileSwitcherProps) => {
     const setProfileHandler = (profileIdx: number) => {
         props.setProfile(profileIdx);
         props.setArchitectureModeCompare();
-
     }
+
     const profileButtons = () => {
         const profileButtonRenders: JSX.Element[] = [];
         for (const profileIdx in props.profiles) { // eslint-disable-line @typescript-eslint/no-for-in-array
             const profileIdxCasted = parseInt(profileIdx);
-            const doesProfileMatchesSelections = (props.profiles[props.profile]?.[0] === props.selectedModels?.model_a?.value) && (props.profiles[props.profile]?.[1] === props.selectedModels?.model_b?.value)
+            const doesProfileMatchesSelections = (props.profiles[profileIdx]?.[0] === props.selectedModels?.model_a?.value) && (props.profiles[profileIdx]?.[1] === props.selectedModels?.model_b?.value)
             profileButtonRenders.push(
                 <button key={profileIdx} onClick={() => setProfileHandler(profileIdxCasted)} className={`${styles.button} ${(doesProfileMatchesSelections) ? styles.selectedButton : undefined} `}>
                     {parseInt(profileIdx) + 1}
