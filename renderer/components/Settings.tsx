@@ -78,7 +78,7 @@ const Settings = (props: SettingsProps) => {
                     if (logging === undefined) {
                         return;
                     }
-                    if (logging && !confirm('Enabling server log means sending your face to the server.\nHowever, any of the logged data would not publicised unless you allow us to.')) {
+                    if (logging && !confirm('Enabling server log means sending your face to be saved on the server.\nHowever, any of the logged data would not publicised unless you allow us to.')) {
                         return;
                     }
                     props.setLogging(logging ?? false);

@@ -20,7 +20,7 @@ const DisplayMetrics = (props: DisplayMetricsProps) => {
         }}>
             <div className={styles.title}>{props.title}</div>
             <p className={styles.body}>Detected: {props.metricData.detectionResult ?? 'N/A'}</p>
-            <p className={styles.body}>Confidence: {props.metricData.confidence ? `${(props.metricData.confidence * 100)} %` : 'N/A'}</p>
+            <p className={styles.body}>Confidence: {props.metricData.confidence ? `${(props.metricData.confidence * 100).toPrecision(5)} %` : 'N/A'}</p>
         </div>
     );
 };
