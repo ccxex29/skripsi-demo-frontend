@@ -79,7 +79,7 @@ jobs:
 
   build-windows:
     needs: helpers
-    runs-on: windows-2016
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@master
