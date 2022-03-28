@@ -1,6 +1,6 @@
 appId: com.albertnlouis.skripsi.demo
-productName: Frontend Demo Client for Skripsi
-copyright: Copyright © 2021
+productName: Pendeteksi Kantuk
+copyright: Copyright © 2022
 directories:
   output: dist
   buildResources: resources

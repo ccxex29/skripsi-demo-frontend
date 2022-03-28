@@ -59,7 +59,7 @@ const Index = (props: IndexProps) => {
     return (
         <Config>
             <Head>
-                <title>Skripsi Frontend Client</title>
+                <title>Pendeteksi Kantuk</title>
             </Head>
             <div style={{
                 display: 'flex',
