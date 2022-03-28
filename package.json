@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "skripsi-demo-frontend",
-  "description": "Frontend Demo Client for Skripsi",
+  "description": "Pendeteksi Kantuk",
   "version": "1.0.2",
   "author": "Albert Salim & Louis Raymond",
   "main": "app/background.js",
